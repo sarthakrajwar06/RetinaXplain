@@ -41,6 +41,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import sys
 import time
 import uuid
@@ -52,7 +53,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
+from report_service import normalize_report, render_pdf
 
 # --------------------------------------------------------------------------- #
 # Repo layout
@@ -66,9 +68,11 @@ DR_MODEL_DIR = ROOT_DIR / "DiebeticRetinopathy" / "model"
 
 RUNTIME_DIR = SERVER_DIR / "runtime"
 OUTPUT_DIR = RUNTIME_DIR / "outputs"          # per-run generated images
+REPORT_DIR = ROOT_DIR / "reports"
 HISTORY_FILE = RUNTIME_DIR / "history.json"   # patient history store
 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Module-1 quality code does `from src.config import ...`, so the pipeline root
 # must sit on sys.path and be imported as top-level `src.*`.
@@ -468,10 +472,6 @@ def create_app():
         t0 = time.time()
         if not QUALITY_READY:
             return jsonify({"error": f"Quality module unavailable: {QUALITY_ERROR}"}), 500
-        try:
-            DRModelService.get_instance()
-        except Exception as exc:
-            return jsonify({"error": f"DR model unavailable: {type(exc).__name__}: {exc}"}), 500
 
         patient_id = (request.form.get("patient_id") or "").strip()
         eye = request.form.get("eye") or "Right"
@@ -501,18 +501,89 @@ def create_app():
 
         run_id = uuid.uuid4().hex[:12]
         name = Path(img_file.filename).name[:80]
+        run_dir = OUTPUT_DIR / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+
+        def _save_photo(arr_bgr, name):
+            """Downscale (max side ~1600) and store a full-res photo copy."""
+            hh, ww = arr_bgr.shape[:2]
+            sc = min(1.0, PHOTO_LONGEST / float(max(hh, ww)))
+            if sc < 1.0:
+                arr_bgr = cv2.resize(
+                    arr_bgr, (int(round(ww * sc)), int(round(hh * sc))),
+                    interpolation=cv2.INTER_AREA)
+            Image.fromarray(cv2.cvtColor(arr_bgr, cv2.COLOR_BGR2RGB)).save(run_dir / name)
 
         # ------------------- 1) MODULE 1 quality gate ------------------- #
         qres, _orig_bgr, passed_bgr = assess_and_enhance_pipeline(bgr, filename=name)
+        q = quality_block(qres)
+        recapture = bool(qres["recapture_required"] or not qres["ok_to_go"])
+        if recapture:
+            _save_photo(bgr, "submitted.png")
+            elapsed = time.time() - t0
+            RECENT_LATENCIES.append(elapsed)
+            payload = {
+                "result_image_url": None,
+                "submitted_photo_url": f"/outputs/{run_id}/submitted.png",
+                "enhanced_photo_url": None,
+                "classification": None,
+                "lesions": {
+                    "microaneurysms": 0,
+                    "hemorrhages": 0,
+                    "exudates": 0,
+                    "detection_bars": [0, 0, 0],
+                    "annotated_url": None,
+                    "note": "Skipped because the quality gate marked this eye ungradeable.",
+                },
+                "quality": {
+                    "focus": q["focus"],
+                    "illumination": q["illumination"],
+                    "field_of_view": q["field_of_view"],
+                    "overall": q["overall"],
+                    "enhancement": q["enhancement"],
+                },
+                "quality_gate": {
+                    "original_status": q["original_status"],
+                    "final_status": q["final_status"],
+                    "action": q["action"],
+                    "overall_score": q["overall_score"],
+                    "post_enhancement_score": q["post_enhancement_score"],
+                    "score_delta": q["score_delta"],
+                    "enhancement_applied": bool(qres.get("enhancement_applied")),
+                    "operations": qres.get("enhancement_operations") or [],
+                    "recapture_required": True,
+                    "ok_to_go": False,
+                    "reason": q["reason"] or "Image is ungradeable; recapture required.",
+                    "dimension_scores": q["dimension_scores"],
+                },
+                "xai": {
+                    "original_url": None,
+                    "heatmap_url": None,
+                },
+                "telemedicine": telemedicine_stats(),
+                "history": [],
+                "request": {
+                    "patient_id": patient_id or "Unlabeled",
+                    "eye": eye,
+                    "image_name": name,
+                    "processed_ms": round(elapsed * 1000, 1),
+                },
+            }
+            print(f"[server] {name} | {w}x{h} | quality={q['final_status']} "
+                  f"({q['action']}) | DR skipped: recapture required | {elapsed:.1f}s")
+            return jsonify(payload)
 
         # ---------------- 2) MODULE 3 classification + XAI ---------------- #
-        model = DRModelService.get_instance()
+        try:
+            model = DRModelService.get_instance()
+        except Exception as exc:
+            return jsonify({"error": f"DR model unavailable: {type(exc).__name__}: {exc}"}), 500
         pil_for_model = Image.fromarray(cv2.cvtColor(passed_bgr, cv2.COLOR_BGR2RGB))
         classification, canvas, heat_img, result_img = model.explain(pil_for_model)
 
         # ---- 2b) Module-2 placeholder: lesion-candidate annotations ------- #
         if ANNOTATOR_READY:
-            ann = annotate_lesion_candidates(passed_bgr)
+            ann = annotate_lesion_candidates(passed_bgr, classification["grade"])
         else:
             ann = {"microaneurysms": 0, "hemorrhages": 0, "exudates": 0,
                    "annotated_bgr": None,
@@ -613,6 +684,18 @@ def create_app():
     @app.get("/outputs/<path:filename>")
     def outputs(filename):
         return send_from_directory(OUTPUT_DIR, filename)
+
+    @app.post("/api/report")
+    def report():
+        payload = request.get_json(silent=True) or {}
+        try:
+            report_data = normalize_report(payload)
+            report_id = re.sub(r"[^A-Za-z0-9._-]+", "_", report_data["report_id"]).strip("._") or "report"
+            pdf_path = REPORT_DIR / f"report_{report_id}.pdf"
+            render_pdf(report_data, pdf_path, SERVER_DIR)
+            return send_file(pdf_path, as_attachment=True, download_name=f"RetinaXplain_{report_id}.pdf", mimetype="application/pdf")
+        except Exception as exc:
+            return jsonify({"error": f"Report generation failed: {type(exc).__name__}: {exc}"}), 500
 
     @app.errorhandler(413)
     def too_large(_e):

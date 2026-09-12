@@ -40,6 +40,16 @@ pip install -r requirements-server.txt
 python integrated-server/server.py            # → http://0.0.0.0:8000
 ```
 
+On Windows from the repository root, use the project interpreter explicitly:
+
+```powershell
+.venv\Scripts\python.exe integrated-server\server.py
+```
+
+This matters for report downloads because the PDF renderer requires the
+`reportlab` package installed in that same environment. Generated PDFs are
+saved to the repository-level `reports\` directory.
+
 Open http://localhost:8000 — the dashboard is served from `dr-dashboard/`, and
 its "Start analysis" button now calls the real backend (`POST /api/analyze`).
 
@@ -101,16 +111,20 @@ OK-TO-GO and RECAPTURE paths. Pass your own images as arguments to test more.
 
 - **Lesion Detection** runs the **provisional Module-2 placeholder**
   (`lesion_annotator.py`): a deterministic classical-CV *candidate* detector
-  (MA / haemorrhages / exudates, FOV-masked) so the panel, the histogram and
-  the annotated image are live. Counts are candidates, **not** clinical
-  diagnoses — swap the file for your trained Module-2 segmenter when ready
-  (keep the same return contract).
+  (MA / haemorrhages / exudates, FOV-masked). Returned candidate counts are
+  severity-weighted from the Module-3 grade, so higher grades carry a
+  correspondingly higher estimated lesion burden; drawn boxes remain only the
+  real CV candidates. Counts are **not clinical diagnoses** — swap the file
+  for your trained Module-2 segmenter when ready (keep the same return
+  contract).
 - Each `/outputs/<run_id>/` may contain: `original.png` · `heatmap.png` ·
   `result.png` (Grad-CAM composite) · `submitted.png` (as uploaded) ·
   `enhanced.png` (only when the gate enhanced) · `annotated.png` (lesion
   boxes, when candidates exist).
 - **Patient history** is a local JSON file (single-node demo); replace
   `record_screening()`/`telemedicine_stats()` with your DB/telemetry service.
+- Downloaded PDF reports are written only to the repository-level
+  `reports/` directory, not `integrated-server/runtime/`.
 - **Class balance / clinical thresholds** — Module 1 thresholds are
   provisional (see its README); DR grades come from the trained Module 3
   checkpoint as-is. Nothing here is a clinical decision system.

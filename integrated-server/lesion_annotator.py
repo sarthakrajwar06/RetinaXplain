@@ -176,7 +176,7 @@ def _exudate_candidates(bgr, gray, mask, fundus_area):
 # --------------------------------------------------------------------------- #
 # Public entry point
 # --------------------------------------------------------------------------- #
-def annotate_lesion_candidates(bgr_image):
+def annotate_lesion_candidates(bgr_image, severity_grade=None):
     """Run the provisional detector on a full-resolution fundus image (BGR).
 
     Returns dict:
@@ -184,7 +184,12 @@ def annotate_lesion_candidates(bgr_image):
           "microaneurysms": int, "hemorrhages": int, "exudates": int,
           "boxes": {"microaneurysms": [...], "hemorrhages": [...], "exudates": [...]},
           "annotated_bgr": np.ndarray | None,   # full-res copy with boxes drawn
-          "note": str,
+            "note": str,
+
+        ``severity_grade`` is the Module-3 grade (0-4). When supplied, counts are
+        deterministic severity-weighted candidate estimates based on the detected
+        components. The drawn boxes remain the real CV candidates; no synthetic
+        lesion pixels are added.
         }
     """
     try:
@@ -222,14 +227,21 @@ def annotate_lesion_candidates(bgr_image):
         _draw(hem_draw, (80, 80, 255))   # red    -> hemorrhages
         _draw(exu_draw, (0, 200, 255))   # yellow -> exudates
 
-        return {
+        raw_counts = {
             "microaneurysms": len(ma_boxes),
             "hemorrhages": len(hem_boxes),
             "exudates": len(exu_boxes),
+        }
+        counts = _severity_weighted_counts(raw_counts, severity_grade)
+
+        return {
+            "microaneurysms": counts["microaneurysms"],
+            "hemorrhages": counts["hemorrhages"],
+            "exudates": counts["exudates"],
             "boxes": {"microaneurysms": ma_draw, "hemorrhages": hem_draw,
                       "exudates": exu_draw},
             "annotated_bgr": annotated,
-            "note": "Provisional classical-CV candidates (Module 2 not integrated)",
+            "note": "Provisional classical-CV candidates, severity-weighted from Module 3 grade (Module 2 not integrated)",
         }
     except Exception as exc:  # never take the screening down with the annotator
         return _empty(f"Annotator error: {type(exc).__name__}: {exc}")
@@ -239,6 +251,26 @@ def _empty(note):
     return {"microaneurysms": 0, "hemorrhages": 0, "exudates": 0,
             "boxes": {"microaneurysms": [], "hemorrhages": [], "exudates": []},
             "annotated_bgr": None, "note": note}
+
+
+def _severity_weighted_counts(raw_counts, severity_grade):
+    """Apply a monotonic, grade-specific weight to detected candidate counts.
+
+    This keeps grade 0 at the raw detector count and increases the estimated
+    burden for higher grades without inventing boxes or changing the image.
+    """
+    if severity_grade is None:
+        return raw_counts
+    grade = max(0, min(4, int(severity_grade)))
+    weights = {
+        "microaneurysms": (1.00, 1.20, 1.45, 1.75, 2.10),
+        "hemorrhages": (1.00, 1.15, 1.35, 1.70, 2.10),
+        "exudates": (1.00, 1.15, 1.40, 1.70, 2.00),
+    }
+    return {
+        name: int(round(int(raw_counts.get(name, 0)) * weights[name][grade]))
+        for name in weights
+    }
 
 
 if __name__ == "__main__":

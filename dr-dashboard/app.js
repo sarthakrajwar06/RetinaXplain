@@ -61,12 +61,10 @@ const GRADE_LABELS = {
 const $ = (id) => document.getElementById(id);
 const app = document.querySelector(".app");
 const form = $("screeningForm");
-const fileInput = $("fileInput");
-const dropZone = $("dropZone");
-const dzInner = $("dzInner");
-const dzPreview = $("dzPreview");
-const previewImg = $("previewImg");
-const previewName = $("previewName");
+const eyeInputs = {
+  Left: { input: $("leftFileInput"), zone: $("leftDropZone"), inner: $("dzInner"), preview: $("leftPreview"), image: $("leftPreviewImg"), name: $("leftPreviewName") },
+  Right: { input: $("rightFileInput"), zone: $("rightDropZone"), inner: $("rightDzInner"), preview: $("rightPreview"), image: $("rightPreviewImg"), name: $("rightPreviewName") },
+};
 const formError = $("formError");
 const uploadState = $("uploadState");
 const resultState = $("resultState");
@@ -75,8 +73,9 @@ const resultImage = $("resultImage");
 const eyeLabel = $("eyeLabel");
 const newScreeningBtn = $("newScreeningBtn");
 
-let selectedFile = null;
+const selectedFiles = { Left: null, Right: null };
 let lastData = null;      // latest /api/analyze payload
+let reportEyes = [];
 let previewUrl = null;    // object URL of the uploaded file (loading view)
 let resultView = "analyzed"; // which image the center panel shows
 
@@ -139,41 +138,35 @@ function viewSrcOf(d, view) {
 }
 
 /* ============================ file input =========================== */
-function showPreview(file) {
-  selectedFile = file;
-  previewImg.src = URL.createObjectURL(file);
-  previewName.textContent = file.name;
-  dzInner.hidden = true;
-  dzPreview.hidden = false;
+function showPreview(eye, file) {
+  const refs = eyeInputs[eye];
+  selectedFiles[eye] = file;
+  refs.image.src = URL.createObjectURL(file);
+  refs.name.textContent = file.name;
+  refs.inner.hidden = true;
+  refs.preview.hidden = false;
   formError.hidden = true;
 }
-function clearPreview() {
-  selectedFile = null;
-  fileInput.value = "";
-  dzInner.hidden = false;
-  dzPreview.hidden = true;
+function clearPreview(eye) {
+  const refs = eyeInputs[eye];
+  selectedFiles[eye] = null;
+  refs.input.value = "";
+  refs.inner.hidden = false;
+  refs.preview.hidden = true;
 }
 
-$("browseBtn").addEventListener("click", () => fileInput.click());
-$("uploadBtn").addEventListener("click", () => fileInput.click());
-$("clearImgBtn").addEventListener("click", clearPreview);
-
-fileInput.addEventListener("change", (e) => {
-  const f = e.target.files[0];
-  if (f) showPreview(f);
+Object.entries(eyeInputs).forEach(([eye, refs]) => {
+  refs.input.addEventListener("change", (e) => { const f = e.target.files[0]; if (f) showPreview(eye, f); });
+  refs.zone.addEventListener("click", (e) => { if (!e.target.closest("button") && refs.preview.hidden) refs.input.click(); });
+  refs.zone.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && refs.preview.hidden) { e.preventDefault(); refs.input.click(); } });
+  ["dragenter", "dragover"].forEach((ev) => refs.zone.addEventListener(ev, (e) => { e.preventDefault(); refs.zone.classList.add("is-drag"); }));
+  ["dragleave", "drop"].forEach((ev) => refs.zone.addEventListener(ev, (e) => { e.preventDefault(); refs.zone.classList.remove("is-drag"); }));
+  refs.zone.addEventListener("drop", (e) => { const f = e.dataTransfer.files?.[0]; if (f && f.type.startsWith("image/")) showPreview(eye, f); });
 });
-
-dropZone.addEventListener("keydown", (e) => {
-  if ((e.key === "Enter" || e.key === " ") && dzPreview.hidden) { e.preventDefault(); fileInput.click(); }
-});
-["dragenter", "dragover"].forEach((ev) =>
-  dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add("is-drag"); }));
-["dragleave", "drop"].forEach((ev) =>
-  dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove("is-drag"); }));
-dropZone.addEventListener("drop", (e) => {
-  const f = e.dataTransfer.files?.[0];
-  if (f && f.type.startsWith("image/")) showPreview(f);
-});
+$("leftBrowseBtn").addEventListener("click", () => eyeInputs.Left.input.click());
+$("rightBrowseBtn").addEventListener("click", () => eyeInputs.Right.input.click());
+$("leftClearBtn").addEventListener("click", () => clearPreview("Left"));
+$("rightClearBtn").addEventListener("click", () => clearPreview("Right"));
 
 /* ===================== result-image view tabs ===================== */
 $("resultTabs").addEventListener("click", (e) => {
@@ -216,14 +209,15 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   formError.hidden = true;
 
-  if (!selectedFile) {
-    formError.textContent = "Upload a retinal fundus image to start analysis.";
+  const uploads = Object.entries(selectedFiles).filter(([, file]) => file);
+  if (!uploads.length) {
+    formError.textContent = "Upload a left-eye image, right-eye image, or both to start analysis.";
     formError.hidden = false;
     return;
   }
 
   const patientId = $("patientId").value.trim() || "Unlabeled";
-  const eye = selectedEye();
+  const eye = uploads[0][0];
 
   // enter loading state — the panel shows the submitted image right away
   app.dataset.state = "loading";
@@ -236,14 +230,19 @@ form.addEventListener("submit", async (e) => {
   $("resultTabs").hidden = true;
   $("resultCaption").hidden = true;
   if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = URL.createObjectURL(selectedFile);
+  previewUrl = URL.createObjectURL(uploads[0][1]);
   setResultImage(previewUrl);
   $("startBtn").disabled = true;
 
   try {
-    const data = await analyzeImage({ patientId, eye, file: selectedFile });
-    lastData = data;
-    renderResults(data, eye);
+    reportEyes = [];
+    for (const [uploadEye, file] of uploads) {
+      const data = await analyzeImage({ patientId, eye: uploadEye, file });
+      reportEyes.push({ eye: uploadEye, data });
+    }
+    lastData = reportEyes[reportEyes.length - 1].data;
+    renderResults(lastData, reportEyes[reportEyes.length - 1].eye);
+    renderReport(buildReport(reportEyes, patientId));
     app.dataset.state = "results";
     loading.hidden = true;
     newScreeningBtn.hidden = false;
@@ -260,6 +259,79 @@ form.addEventListener("submit", async (e) => {
   } finally {
     $("startBtn").disabled = false;
   }
+});
+
+/* =========================== report preview ======================== */
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+function buildReport(entries, patientId) {
+  const now = new Date();
+  return {
+    report_id: `RX-${now.getTime()}`,
+    analysis_datetime: now.toLocaleString(),
+    eye_analyzed: entries.length === 2 ? "Both Eyes" : `${entries[0].eye} Eye`,
+    report_type: "AI-assisted diabetic retinopathy screening",
+    performance_metrics: { sensitivity: "95.29%", specificity: "99.14%", auc: "0.997" },
+    patient_id: patientId || "Unlabeled",
+    doctor_llm_recommendation: null,
+    disclaimer: "This report is generated by RetinaXplain as an AI-assisted screening aid. It is not a definitive diagnosis and must be reviewed by a qualified medical professional.",
+    eyes: entries.map(({ eye, data }) => {
+      const grade = data.classification?.grade;
+      const referable = grade !== undefined && grade >= 2;
+      const qualityReview = Boolean(data.quality_gate?.recapture_required || data.quality_gate?.final_status === "BORDERLINE");
+      const recommendation = referable ? "Further ophthalmological evaluation is recommended." : "Routine monitoring and follow-up according to clinical protocol.";
+      return {
+        eye_name: `${eye} Eye`,
+        image_path: data.enhanced_photo_url || data.submitted_photo_url || null,
+        image_source: data.enhanced_photo_url ? "Module 1B-Enhanced Image" : "Original Image",
+        quality_status: data.quality?.overall || null,
+        quality_scores: data.quality_gate?.dimension_scores || null,
+        predicted_grade: grade ?? null,
+        grade_probabilities: data.classification?.class_probs || [],
+        calibrated_confidence: null,
+        model_confidence: data.classification?.confidence ?? null,
+        screening_category: grade === undefined ? null : (referable ? "Referable" : "Non-Referable"),
+        ai_recommendation: qualityReview ? `${recommendation} Clinical review is recommended before making a final decision.` : recommendation,
+        gradcam_path: data.xai?.heatmap_url || null,
+        annotated_image_path: data.lesions?.annotated_url || null,
+        lesion_counts: data.lesions ? { Microaneurysms: data.lesions.microaneurysms, Hemorrhages: data.lesions.hemorrhages, Exudates: data.lesions.exudates } : null,
+        lesion_graph_path: null,
+        review_required: qualityReview,
+      };
+    }),
+  };
+}
+
+function renderReport(report) {
+  const content = $("reportContent");
+  const summaries = report.eyes.map((eye) => {
+    const probs = (eye.grade_probabilities || []).slice(0, 5).map((value, index) => `<div class="prob-row"><span>Grade ${index}</span><i><b style="width:${Math.max(0, Math.min(100, Number(value) * 100))}%"></b></i><strong>${(Number(value) * 100).toFixed(2)}%</strong></div>`).join("") || `<p class="report-muted">Probability values unavailable.</p>`;
+    const lesionEntries = eye.lesion_counts ? Object.entries(eye.lesion_counts) : [];
+    const lesionMax = Math.max(1, ...lesionEntries.map(([, count]) => Number(count) || 0));
+    const lesionBars = lesionEntries.length ? `<div class="lesion-bars" aria-label="Detected lesion graph for ${escapeHtml(eye.eye_name)}">${lesionEntries.map(([label, count]) => `<div><span>${escapeHtml(label)}</span><i><b style="width:${Math.max(0, Math.min(100, ((Number(count) || 0) / lesionMax) * 100))}%"></b></i></div>`).join("")}</div>` : `<p class="report-muted">Lesion graph unavailable.</p>`;
+    const image = (src, alt) => src ? `<figure><img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"><figcaption>${escapeHtml(alt)}</figcaption></figure>` : `<div class="report-missing">${escapeHtml(alt)} unavailable</div>`;
+    return `<article class="eye-report"><div class="eye-report-head"><div><p class="report-kicker">Eye-specific result</p><h3>${escapeHtml(eye.eye_name)} Analysis</h3></div><span class="status-badge ${eye.screening_category === "Referable" ? "is-referable" : "is-clear"}">${escapeHtml(eye.screening_category || "Unavailable")}</span></div><p class="report-meta">Image Source: <b>${escapeHtml(eye.image_source || "Unavailable")}</b></p><div class="report-image-grid">${image(eye.image_path, "Fundus image")}${image(eye.gradcam_path, "Grad-CAM generated from Module 3")}${image(eye.annotated_image_path, "Lesion annotations generated from Module 2")}</div><div class="report-data-grid"><div><h4>Prediction</h4><p class="report-grade">Grade ${eye.predicted_grade ?? "Unavailable"}</p><p>Model confidence (uncalibrated): <b>${eye.model_confidence === null ? "Unavailable" : `${(Number(eye.model_confidence) * 100).toFixed(2)}%`}</b></p><p>${escapeHtml(eye.ai_recommendation || "Recommendation unavailable.")}</p></div><div><h4>Grade Probabilities</h4><div class="probabilities">${probs}</div></div><div><h4>Detected Lesions</h4>${lesionBars}<p class="report-muted">Bars represent relative AI-detected lesion regions and require clinical review.</p></div></div></article>`;
+  }).join("");
+  content.innerHTML = `<div class="report-header"><div><p class="report-kicker">RetinaXplain</p><h3>Explainable AI-Assisted Diabetic Retinopathy Screening</h3></div><div class="performance"><b>Evaluation Performance on Project Dataset</b><span>Sensitivity: 95.29% &nbsp; Specificity: 99.14% &nbsp; AUC: 0.997</span></div></div><section class="report-section"><h3>Report Information</h3><dl><div><dt>Date and Time of Analysis</dt><dd>${escapeHtml(report.analysis_datetime)}</dd></div><div><dt>Eye Analyzed</dt><dd>${escapeHtml(report.eye_analyzed)}</dd></div><div><dt>Report Type</dt><dd>${escapeHtml(report.report_type)}</dd></div></dl></section><section class="report-section"><h3>Screening Summary</h3><div class="summary-grid">${report.eyes.map((eye) => `<div><b>${escapeHtml(eye.eye_name)}</b><span>Predicted DR Grade: Grade ${eye.predicted_grade ?? "Unavailable"}</span><span>Screening Category: ${escapeHtml(eye.screening_category || "Unavailable")}</span></div>`).join("")}</div></section>${summaries}`;
+  $("reportPreview").hidden = false;
+}
+
+$("downloadReportBtn").addEventListener("click", async () => {
+  if (!reportEyes.length) return;
+  const report = buildReport(reportEyes, $("patientId").value.trim() || "Unlabeled");
+  report.doctor_pathologist_comment = $("doctorComment").value.trim();
+  const error = $("reportError");
+  error.hidden = true;
+  try {
+    const response = await fetch(`${API_BASE}/api/report`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(report) });
+    if (!response.ok) throw new Error((await response.json()).error || `Download failed (${response.status})`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = `RetinaXplain_${report.report_id}.pdf`; link.click();
+    URL.revokeObjectURL(url);
+  } catch (err) { error.textContent = err.message; error.hidden = false; }
 });
 
 /* ============================== render ============================= */
@@ -631,7 +703,8 @@ function resetToStart() {
   loading.hidden = true;
   newScreeningBtn.hidden = true;
   formError.hidden = true;
-  clearPreview();
+  clearPreview("Left");
+  clearPreview("Right");
   $("patientId").value = "";
   // reset panels to pending
   $("drGrade").textContent = "—";
@@ -657,8 +730,13 @@ function resetToStart() {
   $("historyChart").hidden = true;
   $("resultTabs").hidden = true;
   $("resultCaption").hidden = true;
+  $("reportPreview").hidden = true;
+  $("reportContent").innerHTML = "";
+  $("doctorComment").value = "";
+  $("reportError").hidden = true;
   if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
   lastData = null;
+  reportEyes = [];
   resultView = "analyzed";
   drawGauge(0);
   drawBars([0, 0, 0]);
