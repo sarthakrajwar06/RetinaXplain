@@ -1,527 +1,658 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RetinaXplain — Explainable Retinal Screening</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetinaXplain — Explainable Retinal Screening</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div class="retinal-background" aria-hidden="true">
-  <svg class="retinal-network" viewBox="0 0 1600 1100" preserveAspectRatio="none">
-    <g class="vessels-primary">
-      <path d="M1510 520 C1370 500 1285 455 1190 390 C1080 316 980 240 820 165 C690 104 580 70 430 28"/>
-      <path d="M1508 532 C1368 555 1250 610 1136 706 C1020 805 910 910 760 1010 C660 1074 560 1094 420 1090"/>
-      <path d="M1498 520 C1330 510 1190 520 1040 548 C880 578 734 610 570 620 C410 630 270 604 112 550"/>
-      <path d="M1490 520 C1370 470 1286 360 1230 244 C1186 154 1120 70 1040 -20"/>
-      <path d="M1496 530 C1370 610 1328 730 1328 860 C1328 970 1360 1040 1410 1125"/>
-    </g>
-    <g class="vessels-secondary">
-      <path d="M1190 390 C1110 390 1040 350 980 300 C920 250 870 214 790 206"/>
-      <path d="M1080 318 C1030 258 1000 190 980 112 C966 60 940 22 902 -20"/>
-      <path d="M940 264 C876 282 814 274 754 244 C692 212 644 184 586 176"/>
-      <path d="M820 165 C770 140 732 92 710 42 C690 -5 650 -28 606 -46"/>
-      <path d="M1136 706 C1060 700 1000 730 940 780 C878 832 824 874 748 890"/>
-      <path d="M1020 804 C982 866 974 930 992 1000 C1006 1050 1000 1080 980 1120"/>
-      <path d="M910 910 C850 934 790 950 730 946 C670 942 624 956 580 990"/>
-      <path d="M760 1010 C712 982 674 938 654 884 C636 836 606 810 562 792"/>
-      <path d="M1040 548 C986 500 934 474 870 470 C800 466 744 442 692 408"/>
-      <path d="M880 578 C824 616 774 650 710 660 C644 670 592 696 552 742"/>
-      <path d="M734 610 C700 562 654 530 598 516 C540 502 490 474 450 430"/>
-      <path d="M570 620 C530 658 488 694 432 708 C370 724 324 752 292 796"/>
-      <path d="M1230 244 C1160 238 1106 210 1062 168 C1022 130 986 112 944 108"/>
-      <path d="M1328 860 C1268 830 1224 786 1192 730 C1162 676 1120 650 1074 636"/>
-    </g>
-    <g class="vessels-fine">
-      <path d="M1110 390 C1080 350 1050 326 1016 314 M1040 350 C1000 344 968 326 940 304"/>
-      <path d="M1030 258 C992 240 960 212 932 178 M1002 198 C974 184 950 160 934 128"/>
-      <path d="M876 282 C840 250 814 220 796 184 M826 270 C792 254 770 230 754 202"/>
-      <path d="M1000 730 C966 712 936 700 904 698 M968 758 C938 750 910 758 884 778"/>
-      <path d="M982 866 C948 850 920 844 888 850 M980 930 C950 920 924 924 900 942"/>
-      <path d="M850 934 C822 900 804 870 798 836 M790 950 C770 914 744 888 712 874"/>
-      <path d="M704 660 C678 634 660 606 652 574 M664 666 C638 650 612 628 598 600"/>
-      <path d="M530 658 C500 638 474 616 456 586 M480 690 C450 682 422 668 398 646"/>
-      <path d="M540 502 C518 474 506 444 506 414 M490 478 C466 456 446 430 436 402"/>
-      <path d="M370 724 C344 704 324 680 314 652 M334 748 C308 738 286 720 268 698"/>
-      <path d="M1250 786 C1218 770 1194 744 1178 714 M1228 820 C1200 810 1174 792 1154 768"/>
-      <path d="M1160 210 C1130 180 1112 148 1106 112 M1126 220 C1100 204 1078 182 1062 154"/>
-    </g>
-  </svg>
-</div>
-
-<main>
-  <!-- ================= HERO ================= -->
-  <section class="hero">
-    <div class="wrap">
-      <div class="hero-grid">
-
-        <!-- LEFT: patient / retina panel -->
-        <div class="panel patient-panel reveal" style="animation-delay:.05s">
-          <div class="patient-head">
-            <h1>RetinaXplain</h1>
-            <a href="#sample-report" class="hero-cta" id="sampleReportBtn">See a sample report<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          </div>
-          <div class="hero-eye-toggle" id="heroEyeToggle" hidden aria-label="Switch hero results by eye">
-            <button type="button" class="hero-eye-toggle-btn active" id="heroEyeToggleL" data-eye="L">L</button>
-            <button type="button" class="hero-eye-toggle-btn" id="heroEyeToggleR" data-eye="R">R</button>
-            <span class="hero-eye-toggle-thumb" aria-hidden="true"></span>
-          </div>
-
-          <div class="eye-illustration">
-            <div class="callout c1"><span class="dot"></span><span class="label"><b>Optic disc</b>margin clear, cup‑to‑disc 0.3</span></div>
-            <div class="callout c2"><span class="dot" style="background:var(--amber)"></span><span class="label"><b>Superior temporal</b>2 microaneurysms flagged</span></div>
-            <div class="callout c3"><span class="dot" style="background:var(--teal)"></span><span class="label"><b>Macula</b>no edema detected</span></div>
-
-            <div class="scan-frame" id="scanFrame">
-              <div class="scan-inner">
-                <img class="fundus-photo" id="mainFundusPhoto" alt="Patient fundus photograph, right eye, macula-centred field" src="images/fundus-sample.jpg">
-                <div class="fundus-vignette"></div>
-                <div class="scan-line"></div>
-              </div>
-              <div class="scan-status"><span class="rec-dot"></span>Live capture</div>
-              <div class="scan-quality">Adequate quality</div>
-            </div>
-          </div>
-
-          <div class="patient-metrics">
-            <div class="metric-block">
-              <div class="num" id="heroGradeNum">—</div>
-              <div class="lbl">DR severity grade</div>
-              <div class="tag referable" id="heroGradeTag" style="visibility:hidden;">Referable — refer to ophthalmologist</div>
-            </div>
-            <div class="metric-block" style="text-align:right;">
-              <div class="num" id="heroConfNum">—</div>
-              <div class="lbl">Calibrated confidence</div>
-              <div class="tag optimal" id="heroConfTag" style="visibility:hidden;">Reviewed in 18s</div>
-            </div>
-          </div>
-          <p class="hero-awaiting" id="heroAwaiting">Upload a fundus photo and run the screening pipeline to see results here.</p>
-        </div>
-
-        <!-- RIGHT: stat cards -->
-        <div class="card-grid reveal" style="animation-delay:.15s" data-reveal-group>
-          <div class="stat-card card-sens tilt-card">
-            <div class="top-row"><span>Stage 1 · Acquisition</span><span class="arrow">↗</span></div>
-            <div>
-              <div class="big label-big">Input Fundus<br>Image (L+R)</div>
-              <div class="sub">Upload one eye or both — screening still runs either way</div>
-            </div>
-            <div class="eye-pair">
-              <div class="hero-eye-slot">
-                <button type="button" class="eye-chip" id="heroSlotL" data-eye="L" title="Upload left eye">
-                  <svg class="eye-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                  <span class="eye-chip-label">L</span>
-                </button>
-                <span class="hero-eye-caption" id="heroCaptionL">Left eye</span>
-              </div>
-              <div class="hero-eye-slot">
-                <button type="button" class="eye-chip" id="heroSlotR" data-eye="R" title="Upload right eye">
-                  <svg class="eye-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                  <span class="eye-chip-label">R</span>
-                </button>
-                <span class="hero-eye-caption" id="heroCaptionR">Right eye</span>
-              </div>
-            </div>
-            <button type="button" class="run-btn" id="runScreeningBtn" disabled>
-              <span class="run-btn-label">Run screening</span>
-              <svg class="run-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l14 8-14 8V4Z"/></svg>
-            </button>
-          </div>
-
-          <div class="stat-card card-spec tilt-card">
-            <div class="top-row"><span>Stage 2</span><span class="arrow">↗</span></div>
-            <div>
-              <div class="big label-big">Image Quality<br>Assessment</div>
-              <div class="sub quality-sub" id="qualitySub">Focus, illumination and field of view scored automatically</div>
-            </div>
-          </div>
-
-          <div class="stat-card card-quality tilt-card" id="gradcamCard" role="button" tabindex="0" title="Upload a fundus photo to see Grad-CAM results">
-            <div class="top-row"><span>Stage 4 · Explainability</span><span class="arrow">↗</span></div>
-            <div>
-              <div class="big" id="gradcamNum">—</div>
-              <div class="sub">Grad‑CAM overlap with ophthalmologist‑marked lesions</div>
-            </div>
-            <div class="gradcam-cta">View screening report <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          </div>
-
-          <div class="stat-card card-ma tilt-card" id="lesionCard" role="button" tabindex="0" title="View detected lesions by eye">
-            <div class="top-row"><span>Stage 3 · Segmentation</span></div>
-            <div>
-              <div class="big label-big" style="color:var(--ink)">Lesion<br>Detection</div>
-              <div class="sub" id="lesionSub" style="color:#ffffff">Awaiting scan — run screening to localise lesions</div>
-            </div>
-            <div class="lesion-card-chart" id="lesionCardChart" aria-label="Average lesions detected across analyzed eyes">
-              <div class="lesion-chart-empty">Run screening to populate lesion counts</div>
-            </div>
-          </div>
-
-          <div class="stat-card card-conf tilt-card" id="reportGenerationCard" role="button" tabindex="0" title="View generated report preview">
-            <div class="top-row"><span>Stage 5 · Review</span></div>
-            <div>
-              <div class="big label-big">Report<br>Generation</div>
-              <div class="sub" id="reportSub">Upload and run a scan to generate a report</div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= TRY IT ================= -->
-  <section id="try-it" class="upload-section-pending">
-    <div class="wrap">
-      <div class="section-head" data-reveal>
-        <div class="kicker">See it work</div>
-        <h2>Upload a fundus photo, left and right</h2>
-        <p>Screening captures one 45° field per eye. Drop in either or both to see the shape of a report an ophthalmologist would review.</p>
-      </div>
-
-      <div class="try-panel upload-panel-pending" data-reveal="scale">
-        <div class="disclaimer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-          <p><strong>This is a prototype demonstration, not a diagnosis.</strong> Reports below are generated in your browser to illustrate what the pipeline's output would look like — it does not run the actual MATLAB segmentation and grading models on your photos. Any real screening should come from a certified ophthalmologist or an approved DR screening programme.</p>
-        </div>
-
-        <div class="eye-upload-grid">
-          <div class="eye-slot">
-            <div class="eye-slot-label">Left eye<span class="eye-slot-sub">OS</span><span class="eye-slot-optional">optional</span></div>
-            <div class="dropzone compact" id="dropzoneL">
-              <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
-              <h3>Upload left eye</h3>
-              <p>JPG or PNG, processed in‑browser</p>
-              <input type="file" id="fileInputL" accept="image/*">
-            </div>
-            <div class="eye-thumb-row" id="thumbRowL">
-              <div class="eye-thumb-photo"><img id="thumbImgL" alt="Left eye uploaded fundus photo"></div>
-              <div class="eye-thumb-bottom">
-                <div class="eye-thumb-info"><div class="grade-line" id="thumbGradeL">—</div><div>Left eye (OS)</div></div>
-                <span class="eye-thumb-change" id="thumbChangeL">Change</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="eye-slot">
-            <div class="eye-slot-label">Right eye<span class="eye-slot-sub">OD</span><span class="eye-slot-optional">optional</span></div>
-            <div class="dropzone compact" id="dropzoneR">
-              <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
-              <h3>Upload right eye</h3>
-              <p>JPG or PNG, processed in‑browser</p>
-              <input type="file" id="fileInputR" accept="image/*">
-            </div>
-            <div class="eye-thumb-row" id="thumbRowR">
-              <div class="eye-thumb-photo"><img id="thumbImgR" alt="Right eye uploaded fundus photo"></div>
-              <div class="eye-thumb-bottom">
-                <div class="eye-thumb-info"><div class="grade-line" id="thumbGradeR">—</div><div>Right eye (OD)</div></div>
-                <span class="eye-thumb-change" id="thumbChangeR">Change</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="try-result" id="tryResult">
-          <div class="try-outcome">
-            <div>
-              <div class="num" id="tryGrade">—</div>
-              <div class="lbl">Overall ICDR grade</div>
-            </div>
-            <div>
-              <div class="lbl">Confidence</div>
-              <div style="font-family:'Fraunces',serif;font-size:20px;margin-top:2px;" id="tryConfidence">—</div>
-            </div>
-            <span class="tag" id="tryTag">—</span>
-          </div>
-
-          <div class="try-compare-dual">
-            <div class="eye-detail" id="detailL">
-              <h4>Left eye</h4>
-              <div class="eye-screening-summary" id="summaryL"></div>
-              <div class="compare-slider" id="trySliderL">
-                <div class="layer-after"><canvas id="canvasHeatmapL" width="320" height="320"></canvas><span class="compare-cap right">Grad-CAM attention</span></div>
-                <div class="layer-before" id="trySliderBeforeL"><canvas id="canvasOriginalL" width="320" height="320"></canvas><span class="compare-cap left">Your image</span></div>
-                <div class="compare-handle" id="trySliderHandleL"></div>
-              </div>
-              <div class="try-evidence" id="evidenceL"></div>
-            </div>
-            <div class="eye-detail" id="detailR">
-              <h4>Right eye</h4>
-              <div class="eye-screening-summary" id="summaryR"></div>
-              <div class="compare-slider" id="trySliderR">
-                <div class="layer-after"><canvas id="canvasHeatmapR" width="320" height="320"></canvas><span class="compare-cap right">Grad-CAM attention</span></div>
-                <div class="layer-before" id="trySliderBeforeR"><canvas id="canvasOriginalR" width="320" height="320"></canvas><span class="compare-cap left">Your image</span></div>
-                <div class="compare-handle" id="trySliderHandleR"></div>
-              </div>
-              <div class="try-evidence" id="evidenceR"></div>
-            </div>
-          </div>
-          <button type="button" class="try-eye-switch" id="tryEyeSwitch" hidden>Show right eye</button>
-
-          <span class="reset-link" id="resetBtn">Start over</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= PIPELINE ================= -->
-  <section id="pipeline">
-    <div class="wrap">
-      <div class="section-head" data-reveal>
-        <div class="kicker">The screening pipeline</div>
-        <h2>Five stages, one referral decision</h2>
-        <p>Every fundus image, however it was captured, passes through the same disciplined sequence before it ever reaches a clinician's screen.</p>
-      </div>
-
-      <div class="pipeline" data-reveal-group>
-        <div class="stage tilt-card">
-          <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.2"/><path d="M9 5l1-2h4l1 2"/></svg></div>
-          <div class="idx">01</div>
-          <h3>Quality assessment</h3>
-          <p>Focus, illumination and field of view are scored; borderline images get CLAHE, denoising and illumination correction. Ungradeable images are rejected with recapture guidance.</p>
-        </div>
-        <div class="stage tilt-card">
-          <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>
-          <div class="idx">02</div>
-          <h3>Structure segmentation</h3>
-          <p>Optic disc and fovea localisation, vessel tree extraction, microaneurysm and exudate segmentation, haemorrhage classification, neovascularisation detection.</p>
-        </div>
-        <div class="stage tilt-card">
-          <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"/></svg></div>
-          <div class="idx">03</div>
-          <h3>Severity grading</h3>
-          <p>Lesion evidence is combined into an International Clinical DR score, levels 0–4, tuned for &gt;90% sensitivity and &gt;85% specificity on referable disease.</p>
-        </div>
-        <div class="stage tilt-card">
-          <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l2.5 5.5L20 9l-4 4 1 5.5L12 16l-5 2.5 1-5.5-4-4 5.5-.5z"/></svg></div>
-          <div class="idx">04</div>
-          <h3>Explainability</h3>
-          <p>Grad-CAM attention maps and lesion-level evidence are correlated with clinical criteria and paired with a calibrated confidence score.</p>
-        </div>
-        <div class="stage tilt-card">
-          <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.5-4 4.5-6 7-6s5.5 2 7 6"/></svg></div>
-          <div class="idx">05</div>
-          <h3>Clinician review</h3>
-          <p>An annotated report lets an ophthalmologist confirm or override the referral in under 30 seconds — the model assists, the clinician decides.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= EXPLAINABILITY ================= -->
-  <section id="report-generation">
-    <div class="wrap">
-      <div class="section-head" data-reveal>
-        <div class="kicker">Stage 5 · Report generation</div>
-        <h2>One report, ready to sign off</h2>
-        <p>Every screening ends the same way: a single annotated report with the grade, the evidence behind it, and a place for the ophthalmologist to confirm or override it — built to be read in under 30 seconds.</p>
-      </div>
-
-      <div class="report-doc" data-reveal="scale">
-        <div class="report-doc-head">
-          <div class="report-doc-brand"><span class="brand-mark"></span>RetinaXplain Screening Report</div>
-          <div class="report-doc-meta">
-            <span>Patient ID <b id="reportPatientMeta">Unlabeled</b></span>
-            <span>Visit <b id="reportVisitMeta">Awaiting screening</b></span>
-            <span>Field <b id="reportFieldMeta">45° macula-centred</b></span>
-          </div>
-        </div>
-
-        <div class="report-doc-body">
-          <div class="report-doc-images">
-            <div class="compare-slider" id="reportCompareSlider" tabindex="-1" aria-label="Input image and Grad-CAM comparison slider">
-              <div class="layer-after">
-                <img id="reportHeatmapSample" src="images/heatmap.png" alt="Sample Grad-CAM attention heatmap">
-                <canvas id="reportHeatmapCanvas" width="320" height="320" style="display:none;"></canvas>
-                <span class="compare-cap right">Grad-CAM attention</span>
-              </div>
-              <div class="layer-before" id="reportCompareBefore">
-                <img id="reportImg" src="images/fundus-sample.jpg" alt="Patient fundus photograph">
-                <span class="compare-cap left">Input image</span>
-              </div>
-              <div class="compare-handle" id="reportCompareHandle"></div>
-            </div>
-          </div>
-
-
-          <div class="report-doc-summary">
-            <div class="report-grade-block">
-              <div class="report-grade-num">2</div>
-              <div>
-                <div class="report-grade-label">ICDR severity grade</div>
-                <span class="tag referable" id="reportGradeTag">Referable — refer to ophthalmologist</span>
-              </div>
-            </div>
-
-            <div class="report-conf-row">
-              <span>Model confidence (uncalibrated)</span><b id="reportConfidenceValue">94%</b>
-            </div>
-            <div class="cal-bar-track" style="margin-top:8px;"><div class="cal-bar-fill" id="reportConfidenceBar" data-w="94" style="background:var(--amber)"></div></div>
-
-            <div class="try-evidence" id="reportEvidenceList" style="margin-top:22px;"></div>
-          </div>
-        </div>
-
-        <div class="report-quick-upload">
-          <span class="report-quick-label">View eye in report</span>
-          <div class="report-quick-buttons">
-            <button type="button" class="report-eye-btn" id="reportSlotL" data-eye="L" title="View left eye">L</button>
-            <button type="button" class="report-eye-btn" id="reportSlotR" data-eye="R" title="View right eye">R</button>
-          </div>
-        </div>
-
-        <div class="report-comments">
-          <h4>Clinician comments</h4>
-          <div class="comment-list" id="commentList">
-            <p class="comment-empty" id="commentEmpty">No comments yet — add a note for the patient record or referring physician.</p>
-          </div>
-          <div class="comment-input-row">
-            <textarea id="commentInput" placeholder="Add a comment…" rows="2"></textarea>
-            <button type="button" class="btn-solid" id="addCommentBtn">Add comment</button>
-          </div>
-          <button type="button" class="btn-solid" id="downloadReportBtn" disabled>Download PDF report</button>
-        </div>
-
-        <div class="report-doc-foot">
-          <div class="signoff-status"><span class="rec-dot"></span>Awaiting ophthalmologist sign‑off</div>
-          <div class="signoff-actions">
-            <button class="btn-outline" type="button">Override grade</button>
-            <button class="btn-solid" type="button">Confirm &amp; sign off</button>
-          </div>
-        </div>
-        <div class="report-timestamp">Report generated in 1.8s · target review time &lt;30s</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= DEPLOYMENT ================= -->
-  <section id="deployment">
-    <div class="wrap">
-      <div class="deploy-wrap" data-reveal="scale">
-        <div class="deploy-top">
-          <div>
-            <h2>Sized for a district, not a demo</h2>
-            <p>The pipeline is modelled end-to-end in Simulink — acquisition rate at primary health centres, bandwidth to the reading centre, processing throughput, and how many ophthalmologists a review queue actually needs — so a district covering 100,000+ patients a year knows where it will bottleneck before it deploys.</p>
-          </div>
-          <div class="throughput-chart">
-            <div class="tc-legend">
-              <span><i style="background:#EFD9A8"></i>Images captured</span>
-              <span><i style="background:#8FBF8A"></i>Auto-cleared</span>
-              <span><i style="background:#D9694D"></i>Sent to review</span>
-            </div>
-            <svg viewBox="0 0 320 140" width="100%">
-              <g id="throughputBars"></g>
-              <line x1="0" y1="120" x2="320" y2="120" stroke="rgba(249,245,231,.25)"/>
-            </svg>
-          </div>
-        </div>
-
-        <div class="deploy-stats" data-reveal-group>
-          <div class="d-stat tilt-card dark"><div class="num">2,600</div><div class="lbl">images captured per day across a district network at peak season</div></div>
-          <div class="d-stat tilt-card dark"><div class="num">83%</div><div class="lbl">auto-cleared as Grade 0–1, no ophthalmologist time required</div></div>
-          <div class="d-stat tilt-card dark"><div class="num">6–8</div><div class="lbl">reading-centre ophthalmologists needed to clear the review queue same-day</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= IMPACT ================= -->
-  <section id="impact">
-    <div class="wrap">
-      <div class="section-head" data-reveal>
-        <div class="kicker">Why this matters</div>
-        <h2>The screening gap this closes</h2>
-      </div>
-      <div class="impact-grid" data-reveal-group>
-        <div class="impact-card">
-          <div class="num" data-count="77" data-suffix="M+">0</div>
-          <div class="lbl">diabetic adults in India — the second-highest burden of any country, and rising.</div>
-        </div>
-        <div class="impact-card">
-          <div class="num" data-count="18" data-suffix="%">0</div>
-          <div class="lbl">of them show signs of diabetic retinopathy, a leading and largely preventable cause of blindness.</div>
-        </div>
-        <div class="impact-card">
-          <div class="num">1 : 100,000</div>
-          <div class="lbl">ophthalmologist-to-rural-population ratio — the reason manual mass screening cannot keep pace.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap foot-inner">
-    <div>RetinaXplain — an explainable screening pipeline built for MathWorks' rural DR screening problem statement.</div>
-    <div class="foot-datasets">
-      <a href="https://www.kaggle.com/c/aptos2019-blindness-detection" target="_blank" rel="noopener">APTOS 2019</a>
-      <a href="https://ieeedataport.org/open-access/indian-diabetic-retinopathy-image-dataset-idrid" target="_blank" rel="noopener">IDRiD</a>
-      <a href="https://drive.grand-challenge.org/" target="_blank" rel="noopener">DRIVE</a>
-      <a href="https://www.adcis.net/en/third-party/messidor2" target="_blank" rel="noopener">Messidor-2</a>
-    </div>
+  <div class="retinal-background" aria-hidden="true">
+    <svg class="retinal-network" viewBox="0 0 1600 1100" preserveAspectRatio="none">
+      <g class="vessels-primary">
+        <path d="M1510 520 C1370 500 1285 455 1190 390 C1080 316 980 240 820 165 C690 104 580 70 430 28" />
+        <path d="M1508 532 C1368 555 1250 610 1136 706 C1020 805 910 910 760 1010 C660 1074 560 1094 420 1090" />
+        <path d="M1498 520 C1330 510 1190 520 1040 548 C880 578 734 610 570 620 C410 630 270 604 112 550" />
+        <path d="M1490 520 C1370 470 1286 360 1230 244 C1186 154 1120 70 1040 -20" />
+        <path d="M1496 530 C1370 610 1328 730 1328 860 C1328 970 1360 1040 1410 1125" />
+      </g>
+      <g class="vessels-secondary">
+        <path d="M1190 390 C1110 390 1040 350 980 300 C920 250 870 214 790 206" />
+        <path d="M1080 318 C1030 258 1000 190 980 112 C966 60 940 22 902 -20" />
+        <path d="M940 264 C876 282 814 274 754 244 C692 212 644 184 586 176" />
+        <path d="M820 165 C770 140 732 92 710 42 C690 -5 650 -28 606 -46" />
+        <path d="M1136 706 C1060 700 1000 730 940 780 C878 832 824 874 748 890" />
+        <path d="M1020 804 C982 866 974 930 992 1000 C1006 1050 1000 1080 980 1120" />
+        <path d="M910 910 C850 934 790 950 730 946 C670 942 624 956 580 990" />
+        <path d="M760 1010 C712 982 674 938 654 884 C636 836 606 810 562 792" />
+        <path d="M1040 548 C986 500 934 474 870 470 C800 466 744 442 692 408" />
+        <path d="M880 578 C824 616 774 650 710 660 C644 670 592 696 552 742" />
+        <path d="M734 610 C700 562 654 530 598 516 C540 502 490 474 450 430" />
+        <path d="M570 620 C530 658 488 694 432 708 C370 724 324 752 292 796" />
+        <path d="M1230 244 C1160 238 1106 210 1062 168 C1022 130 986 112 944 108" />
+        <path d="M1328 860 C1268 830 1224 786 1192 730 C1162 676 1120 650 1074 636" />
+      </g>
+      <g class="vessels-fine">
+        <path d="M1110 390 C1080 350 1050 326 1016 314 M1040 350 C1000 344 968 326 940 304" />
+        <path d="M1030 258 C992 240 960 212 932 178 M1002 198 C974 184 950 160 934 128" />
+        <path d="M876 282 C840 250 814 220 796 184 M826 270 C792 254 770 230 754 202" />
+        <path d="M1000 730 C966 712 936 700 904 698 M968 758 C938 750 910 758 884 778" />
+        <path d="M982 866 C948 850 920 844 888 850 M980 930 C950 920 924 924 900 942" />
+        <path d="M850 934 C822 900 804 870 798 836 M790 950 C770 914 744 888 712 874" />
+        <path d="M704 660 C678 634 660 606 652 574 M664 666 C638 650 612 628 598 600" />
+        <path d="M530 658 C500 638 474 616 456 586 M480 690 C450 682 422 668 398 646" />
+        <path d="M540 502 C518 474 506 444 506 414 M490 478 C466 456 446 430 436 402" />
+        <path d="M370 724 C344 704 324 680 314 652 M334 748 C308 738 286 720 268 698" />
+        <path d="M1250 786 C1218 770 1194 744 1178 714 M1228 820 C1200 810 1174 792 1154 768" />
+        <path d="M1160 210 C1130 180 1112 148 1106 112 M1126 220 C1100 204 1078 182 1062 154" />
+      </g>
+    </svg>
   </div>
-</footer>
 
-<div class="report-modal" id="reportPreviewModal" hidden>
-  <div class="report-modal-backdrop" data-modal-close></div>
-  <section class="report-modal-panel" role="dialog" aria-modal="true" aria-labelledby="reportPreviewTitle">
-    <div class="report-modal-head">
-      <div><span class="kicker">Stage 5 · Review</span><h2 id="reportPreviewTitle">Report preview</h2></div>
-      <button type="button" class="modal-close" data-modal-close aria-label="Close report preview">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div id="reportPreviewContent" class="report-preview-content">
-      <div class="preview-empty"><strong>Run a screening to preview this report.</strong><span>The live grade, evidence, image quality and clinician recommendation will appear here.</span></div>
-    </div>
-    <div class="report-modal-actions">
-      <button type="button" class="btn-outline" data-modal-close>Close</button>
-      <button type="button" class="btn-solid" id="downloadPreviewBtn">Download report</button>
-    </div>
-  </section>
-</div>
+  <main>
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-grid">
 
-<div class="report-modal" id="sampleReportModal" hidden>
-  <div class="report-modal-backdrop" data-modal-close></div>
-  <section class="report-modal-panel sample-report-panel" role="dialog" aria-modal="true" aria-labelledby="sampleReportTitle">
-    <div class="report-modal-head">
-      <div><span class="kicker">Example output</span><h2 id="sampleReportTitle">Sample screening report</h2></div>
-      <button type="button" class="modal-close" data-modal-close aria-label="Close sample report">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div class="sample-report-sheet">
-      <div class="sample-report-brand"><span class="brand-mark"></span><span>RetinaXplain Screening Report</span><span class="sample-status">Illustrative</span></div>
-      <div class="sample-report-summary">
-        <div><span class="preview-label">ICDR severity grade</span><strong>2</strong><span class="tag referable">Referable</span></div>
-        <div><span class="preview-label">Model confidence</span><strong>94%</strong><span class="preview-muted">uncalibrated model output</span></div>
-        <div><span class="preview-label">Eye analyzed</span><strong>Right eye</strong><span class="preview-muted">45° macula-centred field</span></div>
+          <!-- LEFT: patient / retina panel -->
+          <div class="panel patient-panel reveal" style="animation-delay:.05s">
+            <div class="patient-head">
+              <h1>RetinaXplain</h1>
+              <a href="#sample-report" class="hero-cta" id="sampleReportBtn">See a sample report<svg viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg></a>
+              <button type="button" class="new-screening-btn" id="newScreeningBtn" hidden>Start a New Screening</button>
+            </div>
+            <div class="hero-eye-toggle" id="heroEyeToggle" hidden aria-label="Switch hero results by eye">
+              <button type="button" class="hero-eye-toggle-btn active" id="heroEyeToggleL" data-eye="L">Left</button>
+              <button type="button" class="hero-eye-toggle-btn" id="heroEyeToggleR" data-eye="R">Right</button>
+              <span class="hero-eye-toggle-thumb" aria-hidden="true"></span>
+            </div>
+
+            <div class="eye-illustration">
+              <div class="callout c1"><span class="dot"></span><span class="label"><b>Optic disc</b>margin clear,
+                  cup‑to‑disc 0.3</span></div>
+              <div class="callout c2"><span class="dot" style="background:var(--amber)"></span><span
+                  class="label"><b>Superior temporal</b>2 microaneurysms flagged</span></div>
+              <div class="callout c3"><span class="dot" style="background:var(--teal)"></span><span
+                  class="label"><b>Macula</b>no edema detected</span></div>
+
+              <div class="scan-frame" id="scanFrame">
+                <div class="scan-inner">
+                  <img class="fundus-photo" id="mainFundusPhoto"
+                    alt="Patient fundus photograph, right eye, macula-centred field" src="images/fundus-sample.jpg">
+                  <div class="fundus-vignette"></div>
+                  <div class="scan-line"></div>
+                </div>
+                <div class="scan-status"><span class="rec-dot"></span>Live capture</div>
+                <div class="scan-quality">Adequate quality</div>
+              </div>
+            </div>
+
+            <div class="patient-metrics">
+              <div class="metric-block">
+                <div class="num" id="heroGradeNum">—</div>
+                <div class="lbl">DR severity grade</div>
+                <div class="tag referable" id="heroGradeTag" style="visibility:hidden;">Referable — refer to
+                  ophthalmologist</div>
+              </div>
+              <div class="metric-block" style="text-align:right;">
+                <div class="num" id="heroConfNum">—</div>
+                <div class="lbl">Calibrated confidence</div>
+                <div class="tag optimal" id="heroConfTag" style="visibility:hidden;">Reviewed in 18s</div>
+              </div>
+            </div>
+            <p class="hero-awaiting" id="heroAwaiting">Upload a fundus photo and run the screening pipeline to see
+              results here.</p>
+          </div>
+
+          <!-- RIGHT: stat cards -->
+          <div class="card-grid reveal" style="animation-delay:.15s" data-reveal-group>
+            <div class="stat-card card-sens tilt-card">
+              <div class="top-row"><span>Stage 1 · Acquisition</span><span class="arrow">↗</span></div>
+              <div>
+                <div class="big label-big">Input Fundus<br>Image (L+R)</div>
+                <div class="sub">Upload one eye or both — screening still runs either way</div>
+              </div>
+              <div class="eye-pair">
+                <div class="hero-eye-slot">
+                  <button type="button" class="eye-chip" id="heroSlotL" data-eye="L" title="Upload left eye">
+                    <svg class="eye-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                      <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                    <span class="eye-chip-label">L</span>
+                  </button>
+                  <span class="hero-eye-caption" id="heroCaptionL">Left eye</span>
+                </div>
+                <div class="hero-eye-slot">
+                  <button type="button" class="eye-chip" id="heroSlotR" data-eye="R" title="Upload right eye">
+                    <svg class="eye-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                      <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                    <span class="eye-chip-label">R</span>
+                  </button>
+                  <span class="hero-eye-caption" id="heroCaptionR">Right eye</span>
+                </div>
+              </div>
+              <button type="button" class="run-btn" id="runScreeningBtn" disabled>
+                <span class="run-btn-label">Run screening</span>
+                <svg class="run-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 4l14 8-14 8V4Z" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="stat-card card-spec tilt-card">
+              <div class="top-row"><span>Stage 2</span><span class="arrow">↗</span></div>
+              <div>
+                <div class="big label-big">Image Quality<br>Assessment</div>
+                <div class="sub quality-sub" id="qualitySub">Focus, illumination and field of view scored automatically
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card card-quality tilt-card" id="gradcamCard" role="button" tabindex="0"
+              title="Upload a fundus photo to see Grad-CAM results">
+              <div class="top-row"><span>Stage 4 · Explainability</span><span class="arrow">↗</span></div>
+              <div>
+                <div class="big" id="gradcamNum">—</div>
+                <div class="sub">Grad‑CAM overlap with ophthalmologist‑marked lesions</div>
+              </div>
+              <div class="gradcam-cta">View screening report <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg></div>
+            </div>
+
+            <div class="stat-card card-ma tilt-card" id="lesionCard" role="button" tabindex="0"
+              title="View detected lesions by eye">
+              <div class="top-row"><span>Stage 3 · Segmentation</span></div>
+              <div>
+                <div class="big label-big" style="color:var(--ink)">Lesion<br>Detection</div>
+                <div class="sub" id="lesionSub" style="color:#ffffff">Awaiting scan — run screening to localise lesions
+                </div>
+              </div>
+              <div class="lesion-card-chart" id="lesionCardChart"
+                aria-label="Average lesions detected across analyzed eyes">
+                <div class="lesion-chart-empty">Run screening to populate lesion counts</div>
+              </div>
+            </div>
+
+            <div class="stat-card card-conf tilt-card" id="reportGenerationCard" role="button" tabindex="0"
+              title="View generated report preview">
+              <div class="top-row"><span>Stage 5 · Review</span></div>
+              <div>
+                <div class="big label-big">Report<br>Generation</div>
+                <div class="sub" id="reportSub">Upload and run a scan to generate a report</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
-      <div class="sample-report-evidence"><h3>Evidence for review</h3><p><i class="evidence-swatch amber"></i>Microaneurysm cluster, superior arcade <b>high confidence</b></p><p><i class="evidence-swatch coral"></i>Hard exudates, temporal to macula <b>high confidence</b></p><p><i class="evidence-swatch teal"></i>No haemorrhage detected <b>consistent</b></p></div>
-      <div class="sample-report-note"><strong>Clinical recommendation</strong><span>Further ophthalmological evaluation is recommended. The model assists; the clinician decides.</span></div>
-    </div>
-    <div class="report-modal-actions"><button type="button" class="btn-solid" data-modal-close>Close sample report</button></div>
-  </section>
-</div>
+    </section>
 
-<div class="report-modal" id="lesionModal" hidden>
-  <div class="report-modal-backdrop" data-modal-close></div>
-  <section class="report-modal-panel lesion-modal-panel" role="dialog" aria-modal="true" aria-labelledby="lesionModalTitle">
-    <div class="report-modal-head">
-      <div><span class="kicker">Stage 3 · Segmentation</span><h2 id="lesionModalTitle">Detected lesions by eye</h2></div>
-      <button type="button" class="modal-close" data-modal-close aria-label="Close lesion details">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div id="lesionModalContent" class="lesion-modal-content">
-      <div class="preview-empty"><strong>Run a screening to view lesion counts.</strong><span>Each analyzed eye will appear here with its detected lesion burden.</span></div>
-    </div>
-    <div class="report-modal-actions"><button type="button" class="btn-solid" data-modal-close>Close</button></div>
-  </section>
-</div>
+    <!-- ================= TRY IT ================= -->
+    <section id="try-it" class="upload-section-pending">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <div class="kicker">See it work</div>
+          <h2>Upload a fundus photo, left and right</h2>
+          <p>Screening captures one 45° field per eye. Drop in either or both to see the shape of a report an
+            ophthalmologist would review.</p>
+        </div>
 
-<script src="script.js"></script>
+        <div class="try-panel upload-panel-pending" data-reveal="scale">
+          <div class="disclaimer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M12 9v4M12 17h.01" />
+              <path d="M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+            </svg>
+            <p><strong>This is a prototype demonstration, not a diagnosis.</strong> Reports below are generated in your
+              browser to illustrate what the pipeline's output would look like — it does not run the actual MATLAB
+              segmentation and grading models on your photos. Any real screening should come from a certified
+              ophthalmologist or an approved DR screening programme.</p>
+          </div>
+
+          <div class="eye-upload-grid">
+            <div class="eye-slot">
+              <div class="eye-slot-label">Left eye<span class="eye-slot-sub">OS</span><span
+                  class="eye-slot-optional">optional</span></div>
+              <div class="dropzone compact" id="dropzoneL">
+                <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                    <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                  </svg></div>
+                <h3>Upload left eye</h3>
+                <p>JPG or PNG, processed in‑browser</p>
+                <input type="file" id="fileInputL" accept="image/*">
+              </div>
+              <div class="eye-thumb-row" id="thumbRowL">
+                <div class="eye-thumb-photo"><img id="thumbImgL" alt="Left eye uploaded fundus photo"><button
+                    type="button" class="eye-thumb-remove" id="thumbRemoveL" aria-label="Remove left eye image"
+                    title="Remove image">×</button></div>
+                <div class="eye-thumb-bottom">
+                  <div class="eye-thumb-info">
+                    <div class="grade-line" id="thumbGradeL">—</div>
+                    <div>Left eye (OS)</div>
+                  </div>
+                  <span class="eye-thumb-change" id="thumbChangeL">Change</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="eye-slot">
+              <div class="eye-slot-label">Right eye<span class="eye-slot-sub">OD</span><span
+                  class="eye-slot-optional">optional</span></div>
+              <div class="dropzone compact" id="dropzoneR">
+                <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                    <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                  </svg></div>
+                <h3>Upload right eye</h3>
+                <p>JPG or PNG, processed in‑browser</p>
+                <input type="file" id="fileInputR" accept="image/*">
+              </div>
+              <div class="eye-thumb-row" id="thumbRowR">
+                <div class="eye-thumb-photo"><img id="thumbImgR" alt="Right eye uploaded fundus photo"><button
+                    type="button" class="eye-thumb-remove" id="thumbRemoveR" aria-label="Remove right eye image"
+                    title="Remove image">×</button></div>
+                <div class="eye-thumb-bottom">
+                  <div class="eye-thumb-info">
+                    <div class="grade-line" id="thumbGradeR">—</div>
+                    <div>Right eye (OD)</div>
+                  </div>
+                  <span class="eye-thumb-change" id="thumbChangeR">Change</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="try-result" id="tryResult">
+            <div class="try-outcome">
+              <div>
+                <div class="num" id="tryGrade">—</div>
+                <div class="lbl">Overall ICDR grade</div>
+              </div>
+              <div>
+                <div class="lbl">Confidence</div>
+                <div style="font-family:'Fraunces',serif;font-size:20px;margin-top:2px;" id="tryConfidence">—</div>
+              </div>
+              <span class="tag" id="tryTag">—</span>
+            </div>
+
+            <div class="try-compare-dual">
+              <div class="eye-detail" id="detailL">
+                <h4>Left eye</h4>
+                <div class="eye-screening-summary" id="summaryL"></div>
+                <div class="compare-slider" id="trySliderL">
+                  <div class="layer-after"><canvas id="canvasHeatmapL" width="320" height="320"></canvas><span
+                      class="compare-cap right">Grad-CAM attention</span></div>
+                  <div class="layer-before" id="trySliderBeforeL"><canvas id="canvasOriginalL" width="320"
+                      height="320"></canvas><span class="compare-cap left">Your image</span></div>
+                  <div class="compare-handle" id="trySliderHandleL"></div>
+                </div>
+                <div class="try-evidence" id="evidenceL"></div>
+              </div>
+              <div class="eye-detail" id="detailR">
+                <h4>Right eye</h4>
+                <div class="eye-screening-summary" id="summaryR"></div>
+                <div class="compare-slider" id="trySliderR">
+                  <div class="layer-after"><canvas id="canvasHeatmapR" width="320" height="320"></canvas><span
+                      class="compare-cap right">Grad-CAM attention</span></div>
+                  <div class="layer-before" id="trySliderBeforeR"><canvas id="canvasOriginalR" width="320"
+                      height="320"></canvas><span class="compare-cap left">Your image</span></div>
+                  <div class="compare-handle" id="trySliderHandleR"></div>
+                </div>
+                <div class="try-evidence" id="evidenceR"></div>
+              </div>
+            </div>
+            <button type="button" class="try-eye-switch" id="tryEyeSwitch" hidden>Show right eye</button>
+
+            <span class="reset-link" id="resetBtn">Start over</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PIPELINE ================= -->
+    <section id="pipeline">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <div class="kicker">The screening pipeline</div>
+          <h2>Five stages, one referral decision</h2>
+          <p>Every fundus image, however it was captured, passes through the same disciplined sequence before it ever
+            reaches a clinician's screen.</p>
+        </div>
+
+        <div class="pipeline" data-reveal-group>
+          <div class="stage tilt-card">
+            <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M9 5l1-2h4l1 2" />
+              </svg></div>
+            <div class="idx">01</div>
+            <h3>Quality assessment</h3>
+            <p>Focus, illumination and field of view are scored; borderline images get CLAHE, denoising and illumination
+              correction. Ungradeable images are rejected with recapture guidance.</p>
+          </div>
+          <div class="stage tilt-card">
+            <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
+              </svg></div>
+            <div class="idx">02</div>
+            <h3>Structure segmentation</h3>
+            <p>Optic disc and fovea localisation, vessel tree extraction, microaneurysm and exudate segmentation,
+              haemorrhage classification, neovascularisation detection.</p>
+          </div>
+          <div class="stage tilt-card">
+            <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6" />
+              </svg></div>
+            <div class="idx">03</div>
+            <h3>Severity grading</h3>
+            <p>Lesion evidence is combined into an International Clinical DR score, levels 0–4, tuned for &gt;90%
+              sensitivity and &gt;85% specificity on referable disease.</p>
+          </div>
+          <div class="stage tilt-card">
+            <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M12 3l2.5 5.5L20 9l-4 4 1 5.5L12 16l-5 2.5 1-5.5-4-4 5.5-.5z" />
+              </svg></div>
+            <div class="idx">04</div>
+            <h3>Explainability</h3>
+            <p>Grad-CAM attention maps and lesion-level evidence are correlated with clinical criteria and paired with a
+              calibrated confidence score.</p>
+          </div>
+          <div class="stage tilt-card">
+            <div class="stage-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="12" cy="8" r="3.4" />
+                <path d="M5 20c1.5-4 4.5-6 7-6s5.5 2 7 6" />
+              </svg></div>
+            <div class="idx">05</div>
+            <h3>Clinician review</h3>
+            <p>An annotated report lets an ophthalmologist confirm or override the referral in under 30 seconds — the
+              model assists, the clinician decides.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= EXPLAINABILITY ================= -->
+    <section id="report-generation">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <div class="kicker">Stage 5 · Report generation</div>
+          <h2>One report, ready to sign off</h2>
+          <p>Every screening ends the same way: a single annotated report with the grade, the evidence behind it, and a
+            place for the ophthalmologist to confirm or override it — built to be read in under 30 seconds.</p>
+        </div>
+
+        <div class="report-doc" data-reveal="scale">
+          <div class="report-doc-head">
+            <div class="report-doc-brand"><span class="brand-mark"></span>RetinaXplain Screening Report</div>
+            <div class="report-doc-meta">
+              <span>Patient ID <b id="reportPatientMeta">Unlabeled</b></span>
+              <span>Visit <b id="reportVisitMeta">Awaiting screening</b></span>
+              <span>Field <b id="reportFieldMeta">45° macula-centred</b></span>
+            </div>
+          </div>
+
+          <div class="report-doc-body">
+            <div class="report-doc-images">
+              <div class="compare-slider" id="reportCompareSlider" tabindex="-1"
+                aria-label="Input image and Grad-CAM comparison slider">
+                <div class="layer-after">
+                  <img id="reportHeatmapSample" src="images/heatmap.png" alt="Sample Grad-CAM attention heatmap">
+                  <canvas id="reportHeatmapCanvas" width="320" height="320" style="display:none;"></canvas>
+                  <span class="compare-cap right">Grad-CAM attention</span>
+                </div>
+                <div class="layer-before" id="reportCompareBefore">
+                  <img id="reportImg" src="images/fundus-sample.jpg" alt="Patient fundus photograph">
+                  <span class="compare-cap left">Input image</span>
+                </div>
+                <div class="compare-handle" id="reportCompareHandle"></div>
+              </div>
+            </div>
+
+
+            <div class="report-doc-summary">
+              <div class="report-grade-block">
+                <div class="report-grade-num">-</div>
+                <div>
+                  <div class="report-grade-label">ICDR severity grade</div>
+                  <span class="tag referable" id="reportGradeTag" style="visibility:hidden"></span>
+                </div>
+              </div>
+
+              <div class="report-conf-row">
+                <span>Model confidence (uncalibrated)</span><b id="reportConfidenceValue"></b>
+              </div>
+              <div class="cal-bar-track" style="margin-top:8px;">
+                <div class="cal-bar-fill" id="reportConfidenceBar" data-w="0" style="background:var(--amber)"></div>
+              </div>
+
+              <div class="try-evidence" id="reportEvidenceList" style="margin-top:22px;"></div>
+            </div>
+          </div>
+
+          <div class="report-quick-upload">
+            <span class="report-quick-label" id="reportQuickLabel">Upload Fundus image to view Gradcam</span>
+            <div class="report-quick-buttons">
+              <button type="button" class="report-eye-btn" id="reportSlotL" data-eye="L"
+                title="View left eye">Left</button>
+              <button type="button" class="report-eye-btn" id="reportSlotR" data-eye="R"
+                title="View right eye">Right</button>
+            </div>
+          </div>
+
+          <div class="report-comments">
+            <h4>Clinician Comment</h4>
+            <div class="comment-list" id="commentList">
+              <p class="comment-empty" id="commentEmpty">No comments yet — add a note for the patient record or
+                referring physician.</p>
+            </div>
+            <div class="comment-input-row">
+              <textarea id="commentInput" placeholder="Add a comment…" rows="2"></textarea>
+              <button type="button" class="btn-solid" id="addCommentBtn">Add comment</button>
+            </div>
+            <button type="button" class="btn-solid" id="downloadReportBtn" disabled>Download PDF report</button>
+          </div>
+
+          <div class="report-doc-foot">
+            <div class="signoff-status"><span class="rec-dot"></span>Awaiting ophthalmologist sign‑off</div>
+            <div class="signoff-actions">
+              <button class="btn-outline" type="button">Override grade</button>
+              <button class="btn-solid" type="button">Confirm &amp; sign off</button>
+            </div>
+          </div>
+          <div class="report-timestamp">Report generated in 1.8s · target review time &lt;30s</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DEPLOYMENT ================= -->
+    <section id="deployment">
+      <div class="wrap">
+        <div class="deploy-wrap" data-reveal="scale">
+          <div class="deploy-top">
+            <div>
+              <h2>Sized for a district, not a demo</h2>
+              <p>The pipeline is modelled end-to-end in Simulink — acquisition rate at primary health centres, bandwidth
+                to the reading centre, processing throughput, and how many ophthalmologists a review queue actually
+                needs — so a district covering 100,000+ patients a year knows where it will bottleneck before it
+                deploys.</p>
+            </div>
+            <div class="throughput-chart">
+              <div class="tc-legend">
+                <span><i style="background:#EFD9A8"></i>Images captured</span>
+                <span><i style="background:#8FBF8A"></i>Auto-cleared</span>
+                <span><i style="background:#D9694D"></i>Sent to review</span>
+              </div>
+              <svg viewBox="0 0 320 140" width="100%">
+                <g id="throughputBars"></g>
+                <line x1="0" y1="120" x2="320" y2="120" stroke="rgba(249,245,231,.25)" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="deploy-stats" data-reveal-group>
+            <div class="d-stat tilt-card dark">
+              <div class="num">2,600</div>
+              <div class="lbl">images captured per day across a district network at peak season</div>
+            </div>
+            <div class="d-stat tilt-card dark">
+              <div class="num">83%</div>
+              <div class="lbl">auto-cleared as Grade 0–1, no ophthalmologist time required</div>
+            </div>
+            <div class="d-stat tilt-card dark">
+              <div class="num">6–8</div>
+              <div class="lbl">reading-centre ophthalmologists needed to clear the review queue same-day</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= IMPACT ================= -->
+    <section id="impact">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <div class="kicker">Why this matters</div>
+          <h2>The screening gap this closes</h2>
+        </div>
+        <div class="impact-grid" data-reveal-group>
+          <div class="impact-card">
+            <div class="num" data-count="77" data-suffix="M+">0</div>
+            <div class="lbl">diabetic adults in India — the second-highest burden of any country, and rising.</div>
+          </div>
+          <div class="impact-card">
+            <div class="num" data-count="18" data-suffix="%">0</div>
+            <div class="lbl">of them show signs of diabetic retinopathy, a leading and largely preventable cause of
+              blindness.</div>
+          </div>
+          <div class="impact-card">
+            <div class="num">1 : 100,000</div>
+            <div class="lbl">ophthalmologist-to-rural-population ratio — the reason manual mass screening cannot keep
+              pace.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <div>RetinaXplain — an explainable screening pipeline built for MathWorks' rural DR screening problem statement.
+      </div>
+      <div class="foot-datasets">
+        <a href="https://www.kaggle.com/c/aptos2019-blindness-detection" target="_blank" rel="noopener">APTOS 2019</a>
+        <a href="https://ieeedataport.org/open-access/indian-diabetic-retinopathy-image-dataset-idrid" target="_blank"
+          rel="noopener">IDRiD</a>
+        <a href="https://drive.grand-challenge.org/" target="_blank" rel="noopener">DDR</a>
+        <a href="https://www.adcis.net/en/third-party/messidor2" target="_blank" rel="noopener">Messidor-2</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="report-modal" id="reportPreviewModal" hidden>
+    <div class="report-modal-backdrop" data-modal-close></div>
+    <section class="report-modal-panel" role="dialog" aria-modal="true" aria-labelledby="reportPreviewTitle">
+      <div class="report-modal-head">
+        <div><span class="kicker">Stage 5 · Review</span>
+          <h2 id="reportPreviewTitle">Report preview</h2>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Close report preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div id="reportPreviewContent" class="report-preview-content">
+        <div class="preview-empty"><strong>Run a screening to preview this report.</strong><span>The live grade,
+            evidence, image quality and clinician recommendation will appear here.</span></div>
+      </div>
+      <div class="report-modal-actions">
+        <button type="button" class="btn-outline" data-modal-close>Close</button>
+        <button type="button" class="btn-solid" id="downloadPreviewBtn">Download report</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="report-modal" id="sampleReportModal" hidden>
+    <div class="report-modal-backdrop" data-modal-close></div>
+    <section class="report-modal-panel sample-report-panel" role="dialog" aria-modal="true"
+      aria-labelledby="sampleReportTitle">
+      <div class="report-modal-head">
+        <div><span class="kicker">Example output</span>
+          <h2 id="sampleReportTitle">Sample screening report</h2>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Close sample report">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="sample-report-sheet">
+        <div class="sample-report-brand"><span class="brand-mark"></span><span>RetinaXplain Screening Report</span><span
+            class="sample-status">Illustrative</span></div>
+        <div class="sample-report-summary">
+          <div><span class="preview-label">ICDR severity grade</span><strong>2</strong><span
+              class="tag referable">Referable</span></div>
+          <div><span class="preview-label">Model confidence</span><strong>94%</strong><span
+              class="preview-muted">uncalibrated model output</span></div>
+          <div><span class="preview-label">Eye analyzed</span><strong>Right eye</strong><span class="preview-muted">45°
+              macula-centred field</span></div>
+        </div>
+        <div class="sample-report-evidence">
+          <h3>Evidence for review</h3>
+          <p><i class="evidence-swatch amber"></i>Microaneurysm cluster, superior arcade <b>high confidence</b></p>
+          <p><i class="evidence-swatch coral"></i>Hard exudates, temporal to macula <b>high confidence</b></p>
+          <p><i class="evidence-swatch teal"></i>No haemorrhage detected <b>consistent</b></p>
+        </div>
+        <div class="sample-report-note"><strong>Clinical recommendation</strong><span>Further ophthalmological
+            evaluation is recommended. The model assists; the clinician decides.</span></div>
+      </div>
+      <div class="report-modal-actions"><button type="button" class="btn-solid" data-modal-close>Close sample
+          report</button></div>
+    </section>
+  </div>
+
+  <div class="report-modal" id="lesionModal" hidden>
+    <div class="report-modal-backdrop" data-modal-close></div>
+    <section class="report-modal-panel lesion-modal-panel" role="dialog" aria-modal="true"
+      aria-labelledby="lesionModalTitle">
+      <div class="report-modal-head">
+        <div><span class="kicker">Stage 3 · Segmentation</span>
+          <h2 id="lesionModalTitle">Detected lesions by eye</h2>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Close lesion details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div id="lesionModalContent" class="lesion-modal-content">
+        <div class="preview-empty"><strong>Run a screening to view lesion counts.</strong><span>Each analyzed eye will
+            appear here with its detected lesion burden.</span></div>
+      </div>
+      <div class="report-modal-actions"><button type="button" class="btn-solid" data-modal-close>Close</button></div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
 
 </body>
+
 </html>

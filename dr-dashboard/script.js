@@ -87,6 +87,7 @@
     const API_BASE = '';
     let selectedTryEye = null;
     let selectedHeroEye = null;
+    const newScreeningBtn = document.getElementById('newScreeningBtn');
 
     function bestGradEye(){
       const entries = Object.entries(state).filter(([, report]) => hasDrResult(report));
@@ -116,6 +117,10 @@
 
     function hasDrResult(report){
       return Boolean(report && !isUngradable(report) && report.classification);
+    }
+
+    function hasGradcamResult(eye){
+      return Boolean(hasDrResult(state[eye]) && state[eye]?.xai?.heatmap_url);
     }
 
     function qualitySummaryParts(eye, report){
@@ -161,16 +166,51 @@
     }
 
     function refreshReportEyeButtons(){
+      const bothEyesScreened = hasGradcamResult('L') && hasGradcamResult('R');
+      const quickLabel = document.getElementById('reportQuickLabel');
+      const quickButtons = document.querySelector('.report-quick-buttons');
+      const hasLeftUpload = Boolean(rawImages.L);
+      const hasRightUpload = Boolean(rawImages.R);
+
+      if (quickLabel){
+        if (bothEyesScreened) {
+          quickLabel.textContent = 'Both eye Fundus image Gradcam is available';
+        } else if (hasLeftUpload && hasRightUpload) {
+          quickLabel.textContent = 'Both eye Fundus images were uploaded';
+        } else if (hasLeftUpload) {
+          quickLabel.textContent = "Only left eye's Fundus image was Uploaded";
+        } else if (hasRightUpload) {
+          quickLabel.textContent = "Only right eye's Fundus image was Uploaded";
+        } else {
+          quickLabel.textContent = 'Upload Fundus image to view Gradcam';
+        }
+      }
+      if (quickButtons) quickButtons.hidden = !bothEyesScreened;
+
       ['L','R'].forEach(eye => {
         const btn = document.getElementById('reportSlot'+eye);
         if (!btn) return;
-        const hasData = hasDrResult(state[eye]) && !!state[eye]?.xai?.heatmap_url;
+        const hasData = bothEyesScreened && hasGradcamResult(eye);
         btn.classList.toggle('has-data', hasData);
         btn.classList.toggle('blocked', !hasData);
         btn.classList.toggle('active', hasData && selectedReportEye === eye);
         btn.disabled = !hasData;
-        btn.title = hasData ? `View ${eye === 'L' ? 'left' : 'right'} eye` : `${eyeName(eye)} did not complete DR/Grad-CAM screening`;
+        btn.title = hasData ? `View ${eye === 'L' ? 'left' : 'right'} eye` : 'Both eyes must complete DR/Grad-CAM screening';
       });
+    }
+
+    function clearReportSummary(){
+      const grade = document.querySelector('.report-grade-num');
+      const gradeTag = document.getElementById('reportGradeTag');
+      const confidenceValue = document.getElementById('reportConfidenceValue');
+      const confidenceBar = document.getElementById('reportConfidenceBar');
+      if (grade) grade.textContent = '-';
+      if (gradeTag) {
+        gradeTag.textContent = '';
+        gradeTag.style.visibility = 'hidden';
+      }
+      if (confidenceValue) confidenceValue.textContent = '';
+      if (confidenceBar) confidenceBar.style.width = '0%';
     }
 
     function clearReportSlider(){
@@ -232,12 +272,15 @@
       if (reportFieldMeta) reportFieldMeta.textContent = `45° macula-centred, ${eye === 'L' ? 'left' : 'right'} eye`;
 
       const gradeTag = document.getElementById('reportGradeTag');
+      const gradeNum = document.querySelector('.report-grade-num');
+      if (gradeNum) gradeNum.textContent = ungradable ? '-' : (classification.grade ?? '-');
       if (gradeTag){
         gradeTag.textContent = ungradable ? 'Recapture required' : (referable ? 'Referable — refer to ophthalmologist' : 'Not referable at this grade');
         gradeTag.className = `tag ${ungradable || referable ? 'referable' : 'optimal'}`;
+        gradeTag.style.visibility = 'visible';
       }
       const confidenceValue = document.getElementById('reportConfidenceValue');
-      if (confidenceValue) confidenceValue.textContent = ungradable ? '—' : `${(confidence * 100).toFixed(1)}%`;
+      if (confidenceValue) confidenceValue.textContent = ungradable ? '' : `${(confidence * 100).toFixed(1)}%`;
       const confidenceBar = document.getElementById('reportConfidenceBar');
       if (confidenceBar) confidenceBar.style.width = ungradable ? '0%' : `${Math.max(0, Math.min(100, confidence * 100))}%`;
 
@@ -508,6 +551,7 @@
     function updateCombined(){
       const entries = Object.entries(state);
       const gradableEntries = entries.filter(([, report]) => hasDrResult(report));
+      if (newScreeningBtn) newScreeningBtn.hidden = entries.length === 0;
       if (entries.length === 0){
         renderLesionViews([]);
         resultBox.classList.remove('show');
@@ -516,6 +560,8 @@
         document.getElementById('heroGradeNum').textContent = '—';
         document.getElementById('heroConfNum').textContent = '—';
         document.getElementById('heroAwaiting').classList.remove('hide');
+        clearReportSummary();
+        refreshReportEyeButtons();
         renderHeroEye();
         return;
       }
@@ -551,10 +597,12 @@
       document.getElementById('reportSub').textContent =
         'Annotated report ready for ophthalmologist sign‑off, <30s';
 
-      document.querySelector('.report-grade-num').textContent = classification.grade ?? '—';
-      document.querySelector('.report-doc-summary .report-conf-row b').textContent = classification.confidence == null ? '—' : `${(classification.confidence * 100).toFixed(1)}%`;
-      document.querySelector('.report-doc-summary .tag').textContent = isUngradable(report) ? 'Recapture required' : (classification.referable ? 'Referable — refer to ophthalmologist' : 'Not referable at this grade');
-      document.querySelector('.report-doc-summary .tag').className = `tag ${isUngradable(report) || classification.referable ? 'referable' : 'optimal'}`;
+      document.querySelector('.report-grade-num').textContent = hasDrResult(report) ? (classification.grade ?? '-') : '-';
+      document.querySelector('.report-doc-summary .report-conf-row b').textContent = hasDrResult(report) && classification.confidence != null ? `${(classification.confidence * 100).toFixed(1)}%` : '';
+      const reportTag = document.querySelector('.report-doc-summary .tag');
+      reportTag.textContent = isUngradable(report) ? 'Recapture required' : (classification.referable ? 'Referable — refer to ophthalmologist' : 'Not referable at this grade');
+      reportTag.className = `tag ${isUngradable(report) || classification.referable ? 'referable' : 'optimal'}`;
+      reportTag.style.visibility = 'visible';
       document.getElementById('downloadReportBtn').disabled = gradableEntries.length === 0;
       renderLiveReportPreview(entries, worstEye, report);
     }
@@ -666,6 +714,7 @@
       const thumbImg = document.getElementById('thumbImg'+eye);
       const thumbGrade = document.getElementById('thumbGrade'+eye);
       const thumbChange = document.getElementById('thumbChange'+eye);
+      const thumbRemove = document.getElementById('thumbRemove'+eye);
       const canvasOriginal = document.getElementById('canvasOriginal'+eye);
       const canvasHeatmap = document.getElementById('canvasHeatmap'+eye);
       const evidenceList = document.getElementById('evidence'+eye);
@@ -719,6 +768,31 @@
         reader.readAsDataURL(file);
       }
 
+      function removeUploadedImage(){
+        delete state[eye];
+        delete rawImages[eye];
+        fileInput.value = '';
+        thumbImg.removeAttribute('src');
+        thumbRow.classList.remove('show');
+        dropzone.classList.remove('hide');
+        evidenceList.innerHTML = '';
+        detail.classList.remove('show');
+
+        const heroSlot = document.getElementById('heroSlot'+eye);
+        if (heroSlot){
+          heroSlot.style.backgroundImage = '';
+          heroSlot.classList.remove('filled');
+        }
+        const heroCaption = document.getElementById('heroCaption'+eye);
+        if (heroCaption) heroCaption.textContent = eye === 'L' ? 'Left eye' : 'Right eye';
+
+        if (selectedTryEye === eye) selectedTryEye = rawImages[eye === 'L' ? 'R' : 'L'] ? (eye === 'L' ? 'R' : 'L') : null;
+        if (selectedHeroEye === eye) selectedHeroEye = null;
+        if (selectedReportEye === eye) clearReportSlider();
+        document.getElementById('runScreeningBtn').disabled = Object.keys(rawImages).length === 0;
+        updateCombined();
+      }
+
       dropzone.addEventListener('click', () => fileInput.click());
       ['dragover','dragenter'].forEach(evt => dropzone.addEventListener(evt, e => {
         e.preventDefault(); dropzone.classList.add('drag');
@@ -735,6 +809,7 @@
         if (f) handleFile(f);
       });
       thumbChange.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+      thumbRemove?.addEventListener('click', (e) => { e.stopPropagation(); removeUploadedImage(); });
     }
 
     setupEye('L');
@@ -813,7 +888,7 @@
       button.disabled = true;
       try {
         const payload = buildReportPayload();
-        payload.doctor_pathologist_comment = document.getElementById('commentInput')?.value.trim() || '';
+        payload.doctor_pathologist_comment = document.getElementById('commentInput')?.dataset.submittedComment || '';
         const response = await fetch(`${API_BASE}/api/report`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -834,6 +909,7 @@
       }
     }
     document.getElementById('downloadReportBtn')?.addEventListener('click', downloadReportPdf);
+    newScreeningBtn?.addEventListener('click', () => window.location.reload());
 
     ['L','R'].forEach(eye => {
       const slot = document.getElementById('heroSlot'+eye);
@@ -1053,29 +1129,48 @@
     const empty = document.getElementById('commentEmpty');
     const input = document.getElementById('commentInput');
     const addBtn = document.getElementById('addCommentBtn');
-    if (!list || !input || !addBtn) return;
+    const inputRow = input?.closest('.comment-input-row');
+    if (!list || !input || !addBtn || !inputRow) return;
 
-    function addComment(){
-      const text = input.value.trim();
-      if (!text) return;
-      if (empty) empty.remove();
+    function renderComment(text){
+      const now = new Date();
+      const time = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      list.innerHTML = '';
 
       const item = document.createElement('div');
       item.className = 'comment-item';
-      const now = new Date();
-      const time = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
       const nameEl = document.createElement('div');
       nameEl.className = 'comment-meta';
       nameEl.innerHTML = `<span>Reviewing ophthalmologist</span><span>${time}</span>`;
       const textEl = document.createElement('div');
       textEl.className = 'comment-text';
       textEl.textContent = text;
-      item.appendChild(nameEl);
-      item.appendChild(textEl);
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'comment-edit';
+      editBtn.setAttribute('aria-label', 'Edit clinician comment');
+      editBtn.title = 'Edit clinician comment';
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+      editBtn.addEventListener('click', () => {
+        inputRow.hidden = false;
+        input.disabled = false;
+        addBtn.disabled = false;
+        addBtn.textContent = 'Save comment';
+        input.value = input.dataset.submittedComment || '';
+        input.focus();
+      });
+      item.append(nameEl, textEl, editBtn);
       list.appendChild(item);
+    }
 
+    function addComment(){
+      const text = input.value.trim();
+      if (!text) return;
+      if (empty) empty.remove();
+      input.dataset.submittedComment = text;
       input.value = '';
-      input.focus();
+      inputRow.hidden = true;
+      renderComment(text);
     }
 
     addBtn.addEventListener('click', addComment);

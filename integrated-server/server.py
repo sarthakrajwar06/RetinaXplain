@@ -32,7 +32,7 @@ The JSON response matches the exact contract documented in
 `dr-dashboard/app.js` (see the BACKEND CONTRACT block at the top of that file).
 
 Run:
-    pip install -r integrated-server/requirements-server.txt
+    pip install -r requirements.txt
     python integrated-server/server.py            # http://0.0.0.0:8000
 """
 
@@ -105,6 +105,7 @@ except Exception as exc:  # pragma: no cover
     ANNOTATOR_ERROR = f"{type(exc).__name__}: {exc}"
 
 PHOTO_LONGEST = 1600   # full-res photo copies kept for the dashboard
+PHOTO_JPEG_QUALITY = 88
 
 # =========================================================================== #
 # Module 3 + Grad-CAM service  (torch imports are deferred/lazy on purpose so
@@ -505,26 +506,28 @@ def create_app():
         run_dir.mkdir(parents=True, exist_ok=True)
 
         def _save_photo(arr_bgr, name):
-            """Downscale (max side ~1600) and store a full-res photo copy."""
+            """Downscale and JPEG-encode dashboard photos to keep I/O fast."""
             hh, ww = arr_bgr.shape[:2]
             sc = min(1.0, PHOTO_LONGEST / float(max(hh, ww)))
             if sc < 1.0:
                 arr_bgr = cv2.resize(
                     arr_bgr, (int(round(ww * sc)), int(round(hh * sc))),
                     interpolation=cv2.INTER_AREA)
-            Image.fromarray(cv2.cvtColor(arr_bgr, cv2.COLOR_BGR2RGB)).save(run_dir / name)
+            Image.fromarray(cv2.cvtColor(arr_bgr, cv2.COLOR_BGR2RGB)).save(
+                run_dir / name, "JPEG", quality=PHOTO_JPEG_QUALITY, optimize=False
+            )
 
         # ------------------- 1) MODULE 1 quality gate ------------------- #
         qres, _orig_bgr, passed_bgr = assess_and_enhance_pipeline(bgr, filename=name)
         q = quality_block(qres)
         recapture = bool(qres["recapture_required"] or not qres["ok_to_go"])
         if recapture:
-            _save_photo(bgr, "submitted.png")
+            _save_photo(bgr, "submitted.jpg")
             elapsed = time.time() - t0
             RECENT_LATENCIES.append(elapsed)
             payload = {
                 "result_image_url": None,
-                "submitted_photo_url": f"/outputs/{run_id}/submitted.png",
+                "submitted_photo_url": f"/outputs/{run_id}/submitted.jpg",
                 "enhanced_photo_url": None,
                 "classification": None,
                 "lesions": {
@@ -597,20 +600,22 @@ def create_app():
         result_img.save(run_dir / "result.png")
 
         def _save_photo(arr_bgr, name):
-            """Downscale (max side ~1600) and store a full-res photo copy."""
+            """Downscale and JPEG-encode dashboard photos to keep I/O fast."""
             hh, ww = arr_bgr.shape[:2]
             sc = min(1.0, PHOTO_LONGEST / float(max(hh, ww)))
             if sc < 1.0:
                 arr_bgr = cv2.resize(
                     arr_bgr, (int(round(ww * sc)), int(round(hh * sc))),
                     interpolation=cv2.INTER_AREA)
-            Image.fromarray(cv2.cvtColor(arr_bgr, cv2.COLOR_BGR2RGB)).save(run_dir / name)
+            Image.fromarray(cv2.cvtColor(arr_bgr, cv2.COLOR_BGR2RGB)).save(
+                run_dir / name, "JPEG", quality=PHOTO_JPEG_QUALITY, optimize=False
+            )
 
-        _save_photo(bgr, "submitted.png")                       # raw upload
+        _save_photo(bgr, "submitted.jpg")                       # raw upload
         if qres.get("enhancement_applied"):
-            _save_photo(passed_bgr, "enhanced.png")             # Module-1 enhanced
+            _save_photo(passed_bgr, "enhanced.jpg")             # Module-1 enhanced
         if ann.get("annotated_bgr") is not None:
-            _save_photo(ann["annotated_bgr"], "annotated.png")  # lesion boxes
+            _save_photo(ann["annotated_bgr"], "annotated.jpg")  # lesion boxes
 
         # ----------------------- 4) history store ------------------------ #
         history = record_screening(
@@ -627,8 +632,8 @@ def create_app():
 
         payload = {
             "result_image_url": f"/outputs/{run_id}/result.png",
-            "submitted_photo_url": f"/outputs/{run_id}/submitted.png",
-            "enhanced_photo_url": (f"/outputs/{run_id}/enhanced.png"
+            "submitted_photo_url": f"/outputs/{run_id}/submitted.jpg",
+            "enhanced_photo_url": (f"/outputs/{run_id}/enhanced.jpg"
                                    if qres.get("enhancement_applied") else None),
             "classification": classification,
             "lesions": {
@@ -638,7 +643,7 @@ def create_app():
                 "detection_bars": [int(ann["microaneurysms"]),
                                    int(ann["hemorrhages"]),
                                    int(ann["exudates"])],
-                "annotated_url": (f"/outputs/{run_id}/annotated.png"
+                "annotated_url": (f"/outputs/{run_id}/annotated.jpg"
                                   if ann.get("annotated_bgr") is not None else None),
                 "note": ann.get("note", "Module 2 (lesion segmentation) is not integrated yet"),
             },

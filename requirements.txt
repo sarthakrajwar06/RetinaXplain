@@ -9,3 +9,9 @@ seaborn==0.13.2
 scikit-learn==1.7.1
 openpyxl==3.1.5
 tqdm==4.67.1
+
+# Integrated screening server
+flask>=3.0
+opencv-python-headless>=4.8
+pillow>=10.0
+reportlab>=4.0

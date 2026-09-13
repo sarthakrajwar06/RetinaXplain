@@ -34,8 +34,8 @@ parts of this repository into one end-to-end screening flow:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install -r requirements-server.txt
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 
 python integrated-server/server.py            # → http://0.0.0.0:8000
 ```

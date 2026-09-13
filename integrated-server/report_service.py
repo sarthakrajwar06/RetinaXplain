@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 
 DISCLAIMER = (
@@ -74,6 +75,7 @@ def render_pdf(report: dict, output_path: Path, root_dir: Path) -> None:
     styles.add(ParagraphStyle(name="CardHeader", parent=styles["Normal"], textColor=navy, fontSize=8, leading=10, fontName="Helvetica-Bold", alignment=TA_CENTER))
     styles.add(ParagraphStyle(name="UnavailableText", parent=styles["Normal"], textColor=colors.HexColor("#94a3b8"), fontSize=8, leading=10, alignment=TA_CENTER))
     styles.add(ParagraphStyle(name="RecommendationText", parent=styles["Normal"], textColor=colors.HexColor("#1e293b"), fontSize=8.5, leading=12))
+    styles.add(ParagraphStyle(name="WarningIcon", parent=styles["Normal"], textColor=colors.HexColor("#b42318"), fontSize=13, leading=14, fontName="Helvetica-Bold", alignment=TA_CENTER))
 
     doc = SimpleDocTemplate(
         str(output_path),
@@ -337,14 +339,31 @@ def render_pdf(report: dict, output_path: Path, root_dir: Path) -> None:
 
     # AI Screening Recommendation
     story.append(Paragraph("AI Screening Recommendation", styles["Section"]))
-    ai_recs = []
-    for eye in eyes:
-        rec = eye.get("ai_recommendation")
-        if rec:
-            ai_recs.append(f"<b>{eye.get('eye_name', 'Eye')}:</b> {rec}" if len(eyes) > 1 else rec)
-    if not ai_recs and report.get("ai_recommendation"):
-        ai_recs.append(str(report["ai_recommendation"]))
-    ai_rec_text = "<br/><br/>".join(ai_recs) if ai_recs else "No AI screening recommendation was generated."
+    referable_eyes = [
+        str(eye.get("eye_name", "Eye"))
+        for eye in eyes
+        if str(eye.get("screening_category", "")).lower().startswith("referable")
+    ]
+    if referable_eyes:
+        if len(referable_eyes) == 2:
+            affected_eyes = "both eyes"
+            eye_phrase = "in both eyes"
+        else:
+            affected_eyes = referable_eyes[0].lower()
+            eye_phrase = f"in the {escape(affected_eyes)}"
+        ai_rec_text = (
+            "<b>Further ophthalmological evaluation is recommended.</b> "
+            f"The screening findings indicate referable diabetic retinopathy {eye_phrase}."
+        )
+    else:
+        ai_recs = []
+        for eye in eyes:
+            rec = eye.get("ai_recommendation")
+            if rec:
+                ai_recs.append(f"<b>{escape(str(eye.get('eye_name', 'Eye')))}:</b> {escape(str(rec))}" if len(eyes) > 1 else escape(str(rec)))
+        if not ai_recs and report.get("ai_recommendation"):
+            ai_recs.append(escape(str(report["ai_recommendation"])))
+        ai_rec_text = "<br/><br/>".join(ai_recs) if ai_recs else "No AI screening recommendation was generated."
 
     ai_rec_table = Table(
         [[Paragraph(ai_rec_text, styles["RecommendationText"])]],
@@ -362,11 +381,11 @@ def render_pdf(report: dict, output_path: Path, root_dir: Path) -> None:
     story.append(ai_rec_table)
     story.append(Spacer(1, 4 * mm))
 
-    # Doctor / Pathologist Comment (if available)
+    # Clinician comment (if available)
     if report.get("doctor_pathologist_comment"):
-        story.append(Paragraph("Doctor / Pathologist Comment (human-entered)", styles["Section"]))
+        story.append(Paragraph("Clinician Comment", styles["Section"]))
         doc_comment_table = Table(
-            [[Paragraph(str(report["doctor_pathologist_comment"]), styles["RecommendationText"])]],
+            [[Paragraph(escape(str(report["doctor_pathologist_comment"])), styles["RecommendationText"])]],
             colWidths=[180 * mm],
             style=TableStyle([
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fffdfa")),
@@ -385,11 +404,17 @@ def render_pdf(report: dict, output_path: Path, root_dir: Path) -> None:
 
     # Clinical Disclaimer Box
     disc_table = Table(
-        [[Paragraph(f"<b>CLINICAL DISCLAIMER:</b> {report.get('disclaimer', DISCLAIMER)}", styles["Small"])]],
-        colWidths=[180 * mm],
+        [[
+            Paragraph("!", styles["WarningIcon"]),
+            Paragraph(f"<b>CLINICAL DISCLAIMER:</b> {escape(str(report.get('disclaimer', DISCLAIMER)))}", styles["Small"]),
+        ]],
+        colWidths=[10 * mm, 170 * mm],
         style=TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8f9fa")),
-            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#d8e0e8")),
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fff0f0")),
+            ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#f3a6a0")),
+            ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#ffe0de")),
+            ("LINEAFTER", (0, 0), (0, 0), 0.5, colors.HexColor("#f3a6a0")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("TOPPADDING", (0, 0), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ("LEFTPADDING", (0, 0), (-1, -1), 8),

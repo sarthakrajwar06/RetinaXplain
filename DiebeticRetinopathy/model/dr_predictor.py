@@ -26,10 +26,8 @@ Example
 -------
     from dr_predictor import DRPredictor
 
-    predictor = DRPredictor(
-        model_path=r"C:\\Code\\python\\Projects\\SIH\\_2\\model\\efficientnet_b0_dr_best.pth"
-    )
-    result = predictor.predict(r"C:\\path\\to\\fundus_image.jpg")
+    predictor = DRPredictor(model_path="efficientnet_b0_dr_best.pth")
+    result = predictor.predict("path/to/fundus_image.jpg")
     print(result)
 """
 

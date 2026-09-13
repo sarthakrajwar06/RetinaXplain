@@ -15,12 +15,11 @@ that connects them into a single web app.
 
 ## Quick start
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r integrated-server/requirements-server.txt
-
-python integrated-server/server.py        # http://0.0.0.0:8000
-python integrated-server/smoke_test.py    # offline end-to-end test
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python integrated-server\server.py        # http://localhost:8000
 ```
 
 Open the dashboard, upload a fundus photo → you get:
@@ -55,12 +54,5 @@ upload ─► Module 1 quality gate (full resolution)
    (`DRModelService.explain()`). Review it before clinical use.
 4. **Patient history & telemedicine panel** run on a local JSON store with
    simulated numbers — swap in your DB/telemetry module.
-5. `DiebeticRetinopathy/requirements.txt` pins CUDA wheels
-   (`torch==2.7.0+cu128`) for the training machine; the server uses plain
-   `torch`/`torchvision` (CPU fine).
+5. Runtime dependencies are consolidated in the root `requirements.txt`.
 
-## Note on the demo images in `dr-dashboard/assets/`
-
-`sample_*.png` are synthetic placeholders (see `dr-dashboard/tools/`) and are
-no longer used once the backend is running — real outputs come from
-`/outputs/<run_id>/`.
